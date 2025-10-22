@@ -7,7 +7,7 @@ COPY backend/package*.json ./
 RUN npm install
 
 # copia código
-COPY backend/ ./
+COPY . .
 
 EXPOSE 3000
 
