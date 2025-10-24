@@ -1,3 +1,0 @@
-CREATE USER grupo15 WITH PASSWORD 'grupo15_pass';
-CREATE DATABASE anunciosloc_bd OWNER grupo15;
-GRANT ALL PRIVILEGES ON DATABASE anunciosloc_bd TO grupo15;

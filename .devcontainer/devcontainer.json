@@ -1,8 +1,0 @@
-{
-  "name": "AnunciosLoc",
-  "dockerComposeFile": ["../docker-compose.yml"],
-  "service": "backend",
-  "workspaceFolder": "/workspaces/AnunciosLoc",
-  "forwardPorts": [3000, 5433],
-  "postCreateCommand": "cd backend && npm install"
-}

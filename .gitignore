@@ -1,9 +1,0 @@
-node_modules/
-backend/node_modules/
-mobile/node_modules/
-postgres/db_data/
-.vscode/
-.env
-backend/.env
-/postgres/db_data
-local-postgres
