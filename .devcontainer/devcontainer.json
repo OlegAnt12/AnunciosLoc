@@ -1,0 +1,19 @@
+{
+  "name": "AnunciosLoc - Node + Postgre client",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+  "forwardPorts": [4000],
+  "postCreateCommand": "npm install || true",
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash"
+  }
+}
