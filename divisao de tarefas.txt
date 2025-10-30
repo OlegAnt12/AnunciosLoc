@@ -1,6 +1,6 @@
 
 ------------- BD --------------
 Francisco: Documentação
-Holeg: Tabelas dependentes
-Miguel: Tabelas independentes
+Holeg: Backend
+Miguel: base de dados
 -------------------------------
