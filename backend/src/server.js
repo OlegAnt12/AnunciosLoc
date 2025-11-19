@@ -1,52 +1,58 @@
-const app = require('./app');
-const db = require('./config/database');
-const config = require('./config/environment');
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+require('dotenv').config();
 
-const PORT = config.PORT;
+const routes = require('./routes');
 
-async function startServer() {
-  try {
-    // Testar conexão à base de dados
-    const dbConnected = await db.testConnection();
-    if (!dbConnected) {
-      console.error('❌ Não foi possível conectar à base de dados. A encerrar...');
-      process.exit(1);
-    }
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-    // Iniciar servidor
-    app.listen(PORT, () => {
-      console.log('🚀 AnunciosLoc Backend - Versão Intermédia');
-      console.log(`📍 Ambiente: ${config.NODE_ENV}`);
-      console.log(`🔗 Servidor: http://localhost:${PORT}`);
-      console.log(`📊 Health: http://localhost:${PORT}/api/health`);
-      console.log(`📚 API Docs: http://localhost:${PORT}/api`);
-      console.log('✅ Servidor iniciado com sucesso!');
-    });
+// Security middleware
+app.use(helmet());
 
-  } catch (error) {
-    console.error('❌ Erro ao iniciar servidor:', error);
-    process.exit(1);
-  }
-}
+// CORS configuration
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3001',
+  credentials: true
+}));
 
-// Gestão graciosa de shutdown
-process.on('SIGINT', async () => {
-  console.log('🛑 Recebido SIGINT. A encerrar graciosamente...');
-  process.exit(0);
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// Routes
+app.use('/api', routes);
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Rota não encontrada'
+  });
 });
 
-process.on('SIGTERM', async () => {
-  console.log('🛑 Recebido SIGTERM. A encerrar graciosamente...');
-  process.exit(0);
+// Error handling middleware
+app.use((error, req, res, next) => {
+  console.error('Erro não tratado:', error);
+  res.status(500).json({
+    success: false,
+    message: 'Erro interno do servidor'
+  });
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Rejeição não tratada:', reason);
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor AnunciosLoc a correr na porta ${PORT}`);
+  console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 API disponível em: http://localhost:${PORT}/api`);
 });
 
-process.on('uncaughtException', (error) => {
-  console.error('❌ Exceção não tratada:', error);
-  process.exit(1);
-});
-
-startServer();
+module.exports = app;

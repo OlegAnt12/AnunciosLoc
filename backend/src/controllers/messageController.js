@@ -1,148 +1,169 @@
 const Message = require('../models/Message');
-const asyncHandler = require('express-async-handler');
-const Notification = require('../models/Notification');
 
-// @desc    Send message
-// @route   POST /api/messages
-// @access  Private
-const sendMessage = asyncHandler(async (req, res) => {
-  const { to, location, content } = req.body;
+const messageController = {
+  async createMessage(req, res) {
+    try {
+      const { title, content, location_id, policy_type, start_time, end_time, policy_rules } = req.body;
+      const author_id = req.userId;
 
-  const message = await Message.create({
-    from: req.user._id,
-    to,
-    location,
-    content
-  });
+      const messageData = {
+        title,
+        content,
+        location_id,
+        author_id,
+        policy_type,
+        start_time,
+        end_time
+      };
 
-  const populatedMessage = await Message.findById(message._id)
-    .populate('from', 'name')
-    .populate('to', 'name')
-    .populate('location', 'title');
-
-  // Create notification for recipient
-  await Notification.create({
-    user: to,
-    type: 'message',
-    title: 'Nova mensagem',
-    message: `Você recebeu uma nova mensagem sobre: ${populatedMessage.location.title}`,
-    relatedId: populatedMessage._id
-  });
-
-  res.status(201).json(populatedMessage);
-});
-
-// @desc    Get conversation
-// @route   GET /api/messages/conversation/:userId/:locationId
-// @access  Private
-const getConversation = asyncHandler(async (req, res) => {
-  const { userId, locationId } = req.params;
-
-  const messages = await Message.find({
-    $or: [
-      {
-        from: req.user._id,
-        to: userId,
-        location: locationId
-      },
-      {
-        from: userId,
-        to: req.user._id,
-        location: locationId
+      const messageId = await Message.create(messageData);
+      
+      // Add policy rules if provided
+      if (policy_rules && policy_rules.length > 0) {
+        await Message.addPolicyRules(messageId, policy_rules);
       }
-    ]
-  })
-    .populate('from', 'name')
-    .populate('to', 'name')
-    .populate('location', 'title')
-    .sort({ createdAt: 1 });
 
-  res.json(messages);
-});
-
-// @desc    Get user conversations list
-// @route   GET /api/messages/conversations
-// @access  Private
-const getConversations = asyncHandler(async (req, res) => {
-  const conversations = await Message.aggregate([
-    {
-      $match: {
-        $or: [
-          { from: req.user._id },
-          { to: req.user._id }
-        ]
-      }
-    },
-    {
-      $sort: { createdAt: -1 }
-    },
-    {
-      $group: {
-        _id: {
-          location: '$location',
-          participants: { $setUnion: [['$from'], ['$to']] }
-        },
-        lastMessage: { $first: '$$ROOT' },
-        unreadCount: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$to', req.user._id] }, { $eq: ['$read', false] }] },
-              1,
-              0
-            ]
-          }
-        }
-      }
-    },
-    {
-      $lookup: {
-        from: 'locations',
-        localField: 'lastMessage.location',
-        foreignField: '_id',
-        as: 'location'
-      }
-    },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'lastMessage.from',
-        foreignField: '_id',
-        as: 'fromUser'
-      }
-    },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'lastMessage.to',
-        foreignField: '_id',
-        as: 'toUser'
-      }
+      res.status(201).json({
+        success: true,
+        message: 'Mensagem publicada com sucesso',
+        data: { messageId }
+      });
+    } catch (error) {
+      console.error('Erro ao criar mensagem:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
     }
-  ]);
+  },
 
-  res.json(conversations);
-});
+  async getAvailableMessages(req, res) {
+    try {
+      const userId = req.userId;
+      const { latitude, longitude, wifi_ssids = [] } = req.body;
 
-// @desc    Mark messages as read
-// @route   PUT /api/messages/read
-// @access  Private
-const markAsRead = asyncHandler(async (req, res) => {
-  const { messageIds } = req.body;
+      const userLocation = { latitude, longitude, wifi_ssids };
+      const messages = await Message.getMessagesForUser(userId, userLocation);
 
-  await Message.updateMany(
-    {
-      _id: { $in: messageIds },
-      to: req.user._id
-    },
-    { $set: { read: true } }
-  );
+      res.json({
+        success: true,
+        data: messages
+      });
+    } catch (error) {
+      console.error('Erro ao obter mensagens disponíveis:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  },
 
-  res.json({ message: 'Messages marked as read' });
-});
+  async receiveMessage(req, res) {
+    try {
+      const { messageId } = req.body;
+      const userId = req.userId;
 
-module.exports = {
-  sendMessage,
-  getConversation,
-  getConversations,
-  markAsRead,
+      await Message.markAsReceived(userId, messageId);
+
+      res.json({
+        success: true,
+        message: 'Mensagem recebida com sucesso'
+      });
+    } catch (error) {
+      console.error('Erro ao receber mensagem:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  },
+
+  async getUserMessages(req, res) {
+    try {
+      const userId = req.userId;
+      const messages = await Message.getUserMessages(userId);
+
+      res.json({
+        success: true,
+        data: messages
+      });
+    } catch (error) {
+      console.error('Erro ao obter mensagens do utilizador:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  },
+
+  async getSentMessages(req, res) {
+    try {
+      const userId = req.userId;
+      const messages = await Message.getUserSentMessages(userId);
+
+      res.json({
+        success: true,
+        data: messages
+      });
+    } catch (error) {
+      console.error('Erro ao obter mensagens enviadas:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  },
+
+  async deleteMessage(req, res) {
+    try {
+      const { messageId } = req.params;
+      const userId = req.userId;
+
+      const deleted = await Message.deleteMessage(messageId, userId);
+
+      if (!deleted) {
+        return res.status(404).json({
+          success: false,
+          message: 'Mensagem não encontrada ou não tem permissão para a remover'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Mensagem removida com sucesso'
+      });
+    } catch (error) {
+      console.error('Erro ao remover mensagem:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  },
+
+  async getMessageDetails(req, res) {
+    try {
+      const { messageId } = req.params;
+      
+      // This would typically join with other tables to get complete message details
+      // For now, we'll return a simplified version
+      const policyRules = await Message.getMessagePolicyRules(messageId);
+
+      res.json({
+        success: true,
+        data: {
+          messageId,
+          policyRules
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao obter detalhes da mensagem:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  }
 };
+
+module.exports = messageController;
