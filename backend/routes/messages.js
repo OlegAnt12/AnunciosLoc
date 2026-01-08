@@ -1,14 +1,31 @@
 const express = require('express');
-const messageController = require('../controllers/messageController');
-const { authenticateToken } = require('../middleware/auth');
-
 const router = express.Router();
+const messageController = require('../controllers/messageController');
+const { protect } = require('../middleware/auth');
 
-router.use(authenticateToken);
+// @desc    Enviar mensagem
+// @route   POST /api/messages
+// @access  Private
+router.post('/', protect, messageController.createMessage);
 
-router.get('/location/:localId', messageController.getAvailableMessages);
-router.post('/', messageController.createMessage);
-router.post('/:messageId/receive', messageController.receiveMessage);
-router.delete('/:messageId', messageController.deleteMessage);
+// @desc    Obter todas as mensagens do utilizador
+// @route   GET /api/messages
+// @access  Private
+router.get('/', protect, messageController.getUserMessages);
+
+// @desc    Obter mensagem por ID
+// @route   GET /api/messages/:id
+// @access  Private
+router.get('/:id', protect, messageController.getMessage);
+
+// @desc    Atualizar mensagem
+// @route   PUT /api/messages/:id
+// @access  Private
+router.put('/:id', protect, messageController.updateMessage);
+
+// @desc    Eliminar mensagem
+// @route   DELETE /api/messages/:id
+// @access  Private
+router.delete('/:id', protect, messageController.deleteMessage);
 
 module.exports = router;

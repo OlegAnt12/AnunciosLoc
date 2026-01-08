@@ -1,148 +1,151 @@
-const Message = require('../models/Message');
-const asyncHandler = require('express-async-handler');
-const Notification = require('../models/Notification');
+const { Message } = require('../models/Message');
 
-// @desc    Send message
-// @route   POST /api/messages
-// @access  Private
-const sendMessage = asyncHandler(async (req, res) => {
-  const { to, location, content } = req.body;
+const messageController = {
+  async createMessage(req, res) {
+    try {
+      const { receiver_id, content, location_id } = req.body;
+      
+      const message = await Message.create({
+        sender_id: req.userId,
+        receiver_id,
+        content,
+        location_id
+      });
 
-  const message = await Message.create({
-    from: req.user._id,
-    to,
-    location,
-    content
-  });
-
-  const populatedMessage = await Message.findById(message._id)
-    .populate('from', 'name')
-    .populate('to', 'name')
-    .populate('location', 'title');
-
-  // Create notification for recipient
-  await Notification.create({
-    user: to,
-    type: 'message',
-    title: 'Nova mensagem',
-    message: `Você recebeu uma nova mensagem sobre: ${populatedMessage.location.title}`,
-    relatedId: populatedMessage._id
-  });
-
-  res.status(201).json(populatedMessage);
-});
-
-// @desc    Get conversation
-// @route   GET /api/messages/conversation/:userId/:locationId
-// @access  Private
-const getConversation = asyncHandler(async (req, res) => {
-  const { userId, locationId } = req.params;
-
-  const messages = await Message.find({
-    $or: [
-      {
-        from: req.user._id,
-        to: userId,
-        location: locationId
-      },
-      {
-        from: userId,
-        to: req.user._id,
-        location: locationId
-      }
-    ]
-  })
-    .populate('from', 'name')
-    .populate('to', 'name')
-    .populate('location', 'title')
-    .sort({ createdAt: 1 });
-
-  res.json(messages);
-});
-
-// @desc    Get user conversations list
-// @route   GET /api/messages/conversations
-// @access  Private
-const getConversations = asyncHandler(async (req, res) => {
-  const conversations = await Message.aggregate([
-    {
-      $match: {
-        $or: [
-          { from: req.user._id },
-          { to: req.user._id }
-        ]
-      }
-    },
-    {
-      $sort: { createdAt: -1 }
-    },
-    {
-      $group: {
-        _id: {
-          location: '$location',
-          participants: { $setUnion: [['$from'], ['$to']] }
-        },
-        lastMessage: { $first: '$$ROOT' },
-        unreadCount: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$to', req.user._id] }, { $eq: ['$read', false] }] },
-              1,
-              0
-            ]
-          }
-        }
-      }
-    },
-    {
-      $lookup: {
-        from: 'locations',
-        localField: 'lastMessage.location',
-        foreignField: '_id',
-        as: 'location'
-      }
-    },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'lastMessage.from',
-        foreignField: '_id',
-        as: 'fromUser'
-      }
-    },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'lastMessage.to',
-        foreignField: '_id',
-        as: 'toUser'
-      }
+      res.status(201).json({
+        success: true,
+        message: 'Mensagem enviada com sucesso',
+        data: message
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao enviar mensagem'
+      });
     }
-  ]);
+  },
 
-  res.json(conversations);
-});
+  async getUserMessages(req, res) {
+    try {
+      const messages = await Message.findAll({
+        where: {
+          $or: [
+            { sender_id: req.userId },
+            { receiver_id: req.userId }
+          ]
+        },
+        order: [['createdAt', 'DESC']]
+      });
 
-// @desc    Mark messages as read
-// @route   PUT /api/messages/read
-// @access  Private
-const markAsRead = asyncHandler(async (req, res) => {
-  const { messageIds } = req.body;
+      res.json({
+        success: true,
+        data: messages
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao obter mensagens'
+      });
+    }
+  },
 
-  await Message.updateMany(
-    {
-      _id: { $in: messageIds },
-      to: req.user._id
-    },
-    { $set: { read: true } }
-  );
+  async getMessage(req, res) {
+    try {
+      const message = await Message.findByPk(req.params.id);
+      
+      if (!message) {
+        return res.status(404).json({
+          success: false,
+          message: 'Mensagem não encontrada'
+        });
+      }
 
-  res.json({ message: 'Messages marked as read' });
-});
+      // Verificar se o utilizador tem acesso à mensagem
+      if (message.sender_id !== req.userId && message.receiver_id !== req.userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Não tem permissão para ver esta mensagem'
+        });
+      }
 
-module.exports = {
-  sendMessage,
-  getConversation,
-  getConversations,
-  markAsRead,
+      res.json({
+        success: true,
+        data: message
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao obter mensagem'
+      });
+    }
+  },
+
+  async updateMessage(req, res) {
+    try {
+      const message = await Message.findByPk(req.params.id);
+      
+      if (!message) {
+        return res.status(404).json({
+          success: false,
+          message: 'Mensagem não encontrada'
+        });
+      }
+
+      // Apenas o remetente pode editar a mensagem
+      if (message.sender_id !== req.userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Não tem permissão para editar esta mensagem'
+        });
+      }
+
+      await message.update({ content: req.body.content });
+
+      res.json({
+        success: true,
+        message: 'Mensagem atualizada com sucesso',
+        data: message
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar mensagem'
+      });
+    }
+  },
+
+  async deleteMessage(req, res) {
+    try {
+      const message = await Message.findByPk(req.params.id);
+      
+      if (!message) {
+        return res.status(404).json({
+          success: false,
+          message: 'Mensagem não encontrada'
+        });
+      }
+
+      // Apenas o remetente ou destinatário podem eliminar
+      if (message.sender_id !== req.userId && message.receiver_id !== req.userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Não tem permissão para eliminar esta mensagem'
+        });
+      }
+
+      await message.destroy();
+
+      res.json({
+        success: true,
+        message: 'Mensagem eliminada com sucesso'
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao eliminar mensagem'
+      });
+    }
+  }
 };
+
+module.exports = messageController;

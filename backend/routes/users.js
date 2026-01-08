@@ -1,16 +1,16 @@
 const express = require('express');
-const userController = require('../controllers/userController');
-const { authenticateToken } = require('../middleware/auth');
-
 const router = express.Router();
+const userController = require('../controllers/userController');
 
-// Todas as routes protegidas
-router.use(authenticateToken);
+// Rota de teste SEM middleware
+router.get('/profile', userController.getUserProfile);
 
-router.get('/profile', userController.getProfile);
-router.put('/profile', userController.updateProfile);
-router.get('/profile/keys', userController.getProfileKeys);
-router.post('/profile/keys', userController.addProfileKey);
-router.delete('/profile/keys/:key', userController.removeProfileKey);
+// Comente todas as outras rotas temporariamente
+router.put('/profile', userController.updateUserProfile);
+router.get('/', userController.getAllUsers);
+router.get('/:id', userController.getUserById);
+router.post('/', userController.createUser);
+router.put('/:id', userController.updateUser);
+router.delete('/:id', userController.deleteUser);
 
 module.exports = router;
