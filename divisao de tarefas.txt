@@ -1,6 +1,0 @@
-
-------------- BD --------------
-Francisco: Documentação
-Holeg: Backend
-Miguel: base de dados
--------------------------------
