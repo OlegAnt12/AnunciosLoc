@@ -43,6 +43,27 @@ describe('Messages API', () => {
     expect(Array.isArray(res.body.data)).toBeTruthy();
   });
 
+  test('POST /api/messages - fail without location or coords', async () => {
+    const res = await request(app).post('/api/messages').set('Authorization', `Bearer ${authToken}`).send({ title: 'Bad', body: 'No location' });
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+
+  test('Unauthorized user cannot delete someone else\'s message', async () => {
+    // create a new message by auth user
+    const resp = await request(app)
+      .post('/api/messages')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ title: 'Protected', body: 'Author message', latitude: 41.1579, longitude: -8.6291, radius_m: 100 });
+
+    const newMsgId = resp.body.data.id;
+
+    // Attempt to delete by receiverToken (different user)
+    const res = await request(app).delete(`/api/messages/${newMsgId}`).set('Authorization', `Bearer ${receiverToken}`);
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+
   test('POST /api/messages/:id/receive - receiver can receive message', async () => {
     if (!msgId) return;
     const res = await request(app)
