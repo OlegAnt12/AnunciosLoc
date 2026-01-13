@@ -118,10 +118,32 @@ class MessageService {
       );
 
       // Notificar utilizadores relevantes
-      await notificationService.notifyNewMessage(messageId, local_id);
+      await notificationService.notifyNewMessage(messageId, resolvedLocalId);
+
+      // Assign mulas for decentralized delivery
+      if ((modo_entrega || 'CENTRALIZADO').toUpperCase() === 'DESCENTRALIZADO') {
+        // Find active mulas with available capacity
+        const [candidates] = await connection.execute(
+          `SELECT cm.utilizador_id, cm.espaco_maximo_mensagens,
+                  COALESCE(SUM(CASE WHEN mm.entregue = FALSE THEN 1 ELSE 0 END), 0) as currently_assigned
+           FROM config_mulas cm
+           LEFT JOIN mulas_mensagens mm ON cm.utilizador_id = mm.mula_utilizador_id
+           WHERE cm.ativo = TRUE
+           GROUP BY cm.utilizador_id, cm.espaco_maximo_mensagens
+           HAVING currently_assigned < cm.espaco_maximo_mensagens
+           ORDER BY (cm.espaco_maximo_mensagens - currently_assigned) DESC
+           LIMIT 5`);
+
+        for (const candidate of candidates) {
+          await connection.execute(
+            `INSERT INTO mulas_mensagens (mensagem_id, mula_utilizador_id, publicador_utilizador_id) VALUES (?, ?, ?)`,
+            [messageId, candidate.utilizador_id, userId]
+          );
+        }
+      }
 
       // Invalidar cache
-      await cacheService.delete(`messages:location:${local_id}`);
+      await cacheService.delete(`messages:location:${resolvedLocalId}`);
       await cacheService.delete(`messages:user:${userId}`);
 
       return messageId;
