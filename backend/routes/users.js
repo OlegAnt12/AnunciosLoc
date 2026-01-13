@@ -58,12 +58,12 @@ router.get('/:id/locations', async (req, res) => {
   }
 });
 
-// Comente todas as outras rotas temporariamente
-router.put('/profile', userController.updateUserProfile);
-router.get('/', userController.getAllUsers);
-router.get('/:id', userController.getUserById);
-router.post('/', userController.createUser);
-router.put('/:id', userController.updateUser);
-router.delete('/:id', userController.deleteUser);
+// Protected user management routes
+router.put('/profile', require('../middleware/auth').protect, userController.updateUserProfile);
+router.get('/', require('../middleware/auth').protect, userController.getAllUsers);
+router.get('/:id', require('../middleware/auth').protect, userController.getUserById);
+router.post('/', require('../middleware/auth').protect, userController.createUser);
+router.put('/:id', require('../middleware/auth').protect, userController.updateUser);
+router.delete('/:id', require('../middleware/auth').protect, userController.deleteUser;
 
 module.exports = router;

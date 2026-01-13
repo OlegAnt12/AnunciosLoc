@@ -48,21 +48,11 @@ const updateUserProfile = async (req, res) => {
 // @access  Private
 const getAllUsers = async (req, res) => {
   try {
-    console.log('GET All Users called');
-    res.json({
-      success: true,
-      data: [
-        { id: 1, name: 'Utilizador 1', email: 'user1@example.com' },
-        { id: 2, name: 'Utilizador 2', email: 'user2@example.com' }
-      ],
-      message: 'Lista de utilizadores obtida com sucesso'
-    });
+    const [rows] = await db.query('SELECT id, username, data_criacao as created_at, ativo FROM utilizadores ORDER BY id');
+    res.json({ success: true, data: rows });
   } catch (error) {
     console.error('Error in getAllUsers:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro ao obter lista de utilizadores'
-    });
+    res.status(500).json({ success: false, message: 'Erro ao obter lista de utilizadores' });
   }
 };
 
@@ -71,22 +61,14 @@ const getAllUsers = async (req, res) => {
 // @access  Private
 const getUserById = async (req, res) => {
   try {
-    console.log('GET User by ID called:', req.params.id);
-    res.json({
-      success: true,
-      data: {
-        id: req.params.id,
-        name: 'Utilizador ' + req.params.id,
-        email: 'user' + req.params.id + '@example.com'
-      },
-      message: 'Utilizador obtido com sucesso'
-    });
+    const id = parseInt(req.params.id, 10);
+    const [rows] = await db.query('SELECT id, username, data_criacao as created_at, ativo FROM utilizadores WHERE id = ?', [id]);
+    if (rows.length === 0) return res.status(404).json({ success: false, message: 'Utilizador não encontrado' });
+    const profile = await Profile.getUserProfile(id);
+    res.json({ success: true, data: { ...rows[0], profile } });
   } catch (error) {
     console.error('Error in getUserById:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro ao obter utilizador'
-    });
+    res.status(500).json({ success: false, message: 'Erro ao obter utilizador' });
   }
 };
 
@@ -95,18 +77,16 @@ const getUserById = async (req, res) => {
 // @access  Private
 const createUser = async (req, res) => {
   try {
-    console.log('CREATE User called');
-    res.status(201).json({
-      success: true,
-      message: 'Utilizador criado com sucesso',
-      data: req.body
-    });
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ success: false, message: 'username e password obrigatórios' });
+
+    const authService = require('../services/authService');
+    const user = await authService.registerUser(username, password);
+
+    res.status(201).json({ success: true, message: 'Utilizador criado com sucesso', data: user });
   } catch (error) {
     console.error('Error in createUser:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro ao criar utilizador'
-    });
+    res.status(400).json({ success: false, message: error.message || 'Erro ao criar utilizador' });
   }
 };
 
@@ -115,21 +95,24 @@ const createUser = async (req, res) => {
 // @access  Private
 const updateUser = async (req, res) => {
   try {
-    console.log('UPDATE User called:', req.params.id);
-    res.json({
-      success: true,
-      message: 'Utilizador atualizado com sucesso',
-      data: {
-        id: req.params.id,
-        ...req.body
-      }
-    });
+    const id = parseInt(req.params.id, 10);
+    const { username, ativo } = req.body;
+
+    const updates = [];
+    const params = [];
+
+    if (username) { updates.push('username = ?'); params.push(username); }
+    if (typeof ativo !== 'undefined') { updates.push('ativo = ?'); params.push(ativo ? 1 : 0); }
+
+    if (updates.length === 0) return res.status(400).json({ success: false, message: 'Nenhum campo para atualizar' });
+
+    params.push(id);
+    await db.query(`UPDATE utilizadores SET ${updates.join(', ')} WHERE id = ?`, params);
+
+    res.json({ success: true, message: 'Utilizador atualizado com sucesso' });
   } catch (error) {
     console.error('Error in updateUser:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro ao atualizar utilizador'
-    });
+    res.status(500).json({ success: false, message: 'Erro ao atualizar utilizador' });
   }
 };
 
@@ -138,17 +121,12 @@ const updateUser = async (req, res) => {
 // @access  Private
 const deleteUser = async (req, res) => {
   try {
-    console.log('DELETE User called:', req.params.id);
-    res.json({
-      success: true,
-      message: 'Utilizador eliminado com sucesso'
-    });
+    const id = parseInt(req.params.id, 10);
+    await db.query('UPDATE utilizadores SET ativo = FALSE WHERE id = ?', [id]);
+    res.json({ success: true, message: 'Utilizador desativado com sucesso' });
   } catch (error) {
     console.error('Error in deleteUser:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro ao eliminar utilizador'
-    });
+    res.status(500).json({ success: false, message: 'Erro ao eliminar utilizador' });
   }
 };
 
