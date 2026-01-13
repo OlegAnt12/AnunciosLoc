@@ -43,4 +43,17 @@ describe('Profiles API', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
   });
+
+  test('PUT /api/profiles/me - update profile', async () => {
+    const res = await request(app).put('/api/profiles/me').set('Authorization', `Bearer ${authToken}`).send({ profile: { timezone: 'Europe/Lisbon' } });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toHaveProperty('timezone');
+  });
+
+  test('DELETE /api/profiles/me - deactivate profile', async () => {
+    const res = await request(app).delete('/api/profiles/me').set('Authorization', `Bearer ${authToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
 });
