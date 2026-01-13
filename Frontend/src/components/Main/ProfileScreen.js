@@ -69,7 +69,7 @@ export default function ProfileScreen({ user, onLogout }) {
     }
 
     try {
-      const result = await profileService.addKeyValue(user.id, newKey.key, newKey.value);
+      const result = await profileService.addKeyValue(newKey.key, newKey.value);
       if (result.success) {
         setProfileKeys([...profileKeys, { key: newKey.key, value: newKey.value }]);
         setShowKeyModal(false);
@@ -92,7 +92,7 @@ export default function ProfileScreen({ user, onLogout }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              const result = await profileService.removeKey(user.id, keyToDelete);
+              const result = await profileService.removeKey(keyToDelete);
               if (result.success) {
                 setProfileKeys(profileKeys.filter(k => k.key !== keyToDelete));
                 Alert.alert('Sucesso', 'Chave eliminada com sucesso!');

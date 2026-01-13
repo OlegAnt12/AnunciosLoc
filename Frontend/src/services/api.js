@@ -257,9 +257,9 @@ export const locationService = {
 
 // Serviços de Perfil
 export const profileService = {
-  async addKeyValue(userId, key, value) {
+  async addKeyValue(key, value) {
     try {
-      const response = await api.post('/profile/key', { userId, key, value });
+      const response = await api.post('/profiles/key', { key, value });
       return response.data;
     } catch (error) {
       throw {
@@ -269,9 +269,9 @@ export const profileService = {
     }
   },
 
-  async removeKey(userId, key) {
+  async removeKey(key) {
     try {
-      const response = await api.delete('/profile/key', { data: { userId, key } });
+      const response = await api.delete('/profiles/key', { data: { key } });
       return response.data;
     } catch (error) {
       throw {

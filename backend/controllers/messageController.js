@@ -1,149 +1,93 @@
-const { Message } = require('../models/Message');
+const messageService = require('../services/messageService');
+const db = require('../config/database');
 
 const messageController = {
   async createMessage(req, res) {
     try {
-      const { receiver_id, content, location_id } = req.body;
-      
-      const message = await Message.create({
-        sender_id: req.userId,
-        receiver_id,
-        content,
-        location_id
-      });
-
-      res.status(201).json({
-        success: true,
-        message: 'Mensagem enviada com sucesso',
-        data: message
-      });
+      const messageId = await messageService.createMessage(req.body, req.userId);
+      res.status(201).json({ success: true, message: 'Mensagem criada com sucesso', data: { id: messageId } });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao enviar mensagem'
-      });
+      res.status(400).json({ success: false, message: error.message || 'Erro ao criar mensagem' });
     }
   },
 
   async getUserMessages(req, res) {
     try {
-      const messages = await Message.findAll({
-        where: {
-          $or: [
-            { sender_id: req.userId },
-            { receiver_id: req.userId }
-          ]
-        },
-        order: [['createdAt', 'DESC']]
-      });
-
-      res.json({
-        success: true,
-        data: messages
-      });
+      const userId = parseInt(req.params.userId || req.userId, 10);
+      const page = parseInt(req.query.page || '1', 10);
+      const limit = parseInt(req.query.limit || '20', 10);
+      const result = await messageService.getReceivedMessages(userId, page, limit);
+      res.json({ success: true, data: result });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao obter mensagens'
-      });
+      res.status(500).json({ success: false, message: 'Erro ao obter mensagens do utilizador' });
     }
   },
 
   async getMessage(req, res) {
     try {
-      const message = await Message.findByPk(req.params.id);
-      
-      if (!message) {
-        return res.status(404).json({
-          success: false,
-          message: 'Mensagem não encontrada'
-        });
-      }
-
-      // Verificar se o utilizador tem acesso à mensagem
-      if (message.sender_id !== req.userId && message.receiver_id !== req.userId) {
-        return res.status(403).json({
-          success: false,
-          message: 'Não tem permissão para ver esta mensagem'
-        });
-      }
-
-      res.json({
-        success: true,
-        data: message
-      });
+      const id = parseInt(req.params.id, 10);
+      const data = await messageService.getMessageById(id);
+      if (!data) return res.status(404).json({ success: false, message: 'Mensagem não encontrada' });
+      res.json({ success: true, data });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao obter mensagem'
-      });
+      res.status(400).json({ success: false, message: error.message || 'Erro ao obter mensagem' });
     }
   },
 
   async updateMessage(req, res) {
     try {
-      const message = await Message.findByPk(req.params.id);
-      
-      if (!message) {
-        return res.status(404).json({
-          success: false,
-          message: 'Mensagem não encontrada'
-        });
-      }
-
-      // Apenas o remetente pode editar a mensagem
-      if (message.sender_id !== req.userId) {
-        return res.status(403).json({
-          success: false,
-          message: 'Não tem permissão para editar esta mensagem'
-        });
-      }
-
-      await message.update({ content: req.body.content });
-
-      res.json({
-        success: true,
-        message: 'Mensagem atualizada com sucesso',
-        data: message
-      });
+      const id = parseInt(req.params.id, 10);
+      await messageService.updateMessage(id, req.userId, req.body);
+      res.json({ success: true, message: 'Mensagem atualizada' });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao atualizar mensagem'
-      });
+      res.status(400).json({ success: false, message: error.message || 'Erro ao atualizar mensagem' });
     }
   },
 
   async deleteMessage(req, res) {
     try {
-      const message = await Message.findByPk(req.params.id);
-      
-      if (!message) {
-        return res.status(404).json({
-          success: false,
-          message: 'Mensagem não encontrada'
-        });
-      }
-
-      // Apenas o remetente ou destinatário podem eliminar
-      if (message.sender_id !== req.userId && message.receiver_id !== req.userId) {
-        return res.status(403).json({
-          success: false,
-          message: 'Não tem permissão para eliminar esta mensagem'
-        });
-      }
-
-      await message.destroy();
-
-      res.json({
-        success: true,
-        message: 'Mensagem eliminada com sucesso'
-      });
+      const id = parseInt(req.params.id, 10);
+      await messageService.deleteMessage(id, req.userId);
+      res.json({ success: true, message: 'Mensagem removida' });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao eliminar mensagem'
-      });
+      res.status(400).json({ success: false, message: error.message || 'Erro ao remover mensagem' });
+    }
+  },
+
+  async receiveMessage(req, res) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const result = await messageService.receiveMessage(id, req.userId, req.body.deviceId || null);
+      res.json({ success: true, message: 'Mensagem recebida', data: result });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message || 'Erro ao receber mensagem' });
+    }
+  },
+
+  async getMyMessages(req, res) {
+    try {
+      const page = parseInt(req.query.page || '1', 10);
+      const limit = parseInt(req.query.limit || '20', 10);
+      const result = await messageService.getMyMessages(req.userId, page, limit);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Erro ao obter mensagens do utilizador' });
+    }
+  },
+
+  async nearby(req, res) {
+    try {
+      const { latitude = null, longitude = null, wifi_ssids = null } = req.body || {};
+
+      const [rows] = await db.query('SELECT verificar_localizacao_utilizador(?, ?, ?, ?) as local_id', [req.userId, latitude, longitude, (wifi_ssids || []).join('|')]);
+      const localId = rows[0].local_id;
+
+      if (!localId) return res.json({ success: true, data: [] });
+
+      const messages = await messageService.getMessagesForLocation(localId, req.userId);
+      res.json({ success: true, data: messages });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Erro ao obter mensagens próximas' });
     }
   }
 };

@@ -72,11 +72,18 @@ class NotificationService {
     return result[0].count;
   }
 
-  async markNotificationsAsRead(userId) {
-    await db.query(
-      'UPDATE utilizadores SET ultima_notificacao_lida = (SELECT MAX(id) FROM logs_mensagens WHERE utilizador_id = ?) WHERE id = ?',
-      [userId, userId]
-    );
+  async markNotificationsAsRead(userId, lastId = null) {
+    if (lastId) {
+      await db.query(
+        'UPDATE utilizadores SET ultima_notificacao_lida = ? WHERE id = ?',
+        [lastId, userId]
+      );
+    } else {
+      await db.query(
+        'UPDATE utilizadores SET ultima_notificacao_lida = (SELECT COALESCE(MAX(id), 0) FROM logs_mensagens WHERE utilizador_id = ?) WHERE id = ?',
+        [userId, userId]
+      );
+    }
   }
 }
 

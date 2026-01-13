@@ -1,73 +1,75 @@
+const authService = require('../services/authService');
 const { generateToken } = require('../utils/auth');
 
 const register = async (req, res) => {
   try {
+    const { username, password } = req.body;
+    const user = await authService.registerUser(username, password);
+    const token = generateToken(user.id);
+
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: 'Utilizador registado com sucesso',
       data: {
-        id: 1,
-        name: req.body.name,
-        email: req.body.email,
-        token: generateToken(1)
+        id: user.id,
+        username: user.username,
+        token
       }
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(400).json({
       success: false,
-      message: 'Error during registration'
+      message: error.message || 'Erro durante o registo'
     });
   }
 };
 
 const login = async (req, res) => {
   try {
+    const { username, password } = req.body;
+    const result = await authService.loginUser(username, password);
+    const token = generateToken(result.user.id);
+
     res.json({
       success: true,
-      message: 'Login successful',
+      message: 'Login efetuado com sucesso',
       data: {
-        id: 1,
-        name: 'Test User',
-        email: req.body.email,
-        token: generateToken(1)
+        user: result.user,
+        sessionId: result.sessionId,
+        expiresAt: result.expiresAt,
+        token
       }
     });
   } catch (error) {
     res.status(401).json({
       success: false,
-      message: 'Invalid credentials'
+      message: error.message || 'Credenciais inválidas'
     });
   }
 };
 
 const logout = async (req, res) => {
   try {
-    res.json({
-      success: true,
-      message: 'Logout successful'
-    });
+    const sessionId = req.headers['x-session-id'] || req.body.sessionId;
+    await authService.logoutUser(sessionId);
+    res.json({ success: true, message: 'Logout efetuado com sucesso' });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error during logout'
-    });
+    res.status(500).json({ success: false, message: 'Erro durante o logout' });
   }
 };
 
 const refreshToken = async (req, res) => {
   try {
-    res.json({
-      success: true,
-      message: 'Token refreshed',
-      data: {
-        token: generateToken(1)
-      }
-    });
+    // For simplicity, refresh using old token's userId if present
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) throw new Error('Token necessário');
+
+    const decoded = require('../utils/auth').verifyToken(token);
+    const newToken = generateToken(decoded.userId);
+    res.json({ success: true, message: 'Token atualizado', data: { token: newToken } });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error refreshing token'
-    });
+    res.status(401).json({ success: false, message: error.message || 'Erro ao atualizar token' });
   }
 };
 

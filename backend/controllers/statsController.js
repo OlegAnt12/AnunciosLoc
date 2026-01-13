@@ -1,41 +1,26 @@
-const { User } = require('../models/User');
-const { Location } = require('../models/Location');
-const { Message } = require('../models/Message');
-const { Notification } = require('../models/Notification');
-const { Device } = require('../models/Device');
+const db = require('../config/database');
 
 const statsController = {
   async getStats(req, res) {
     try {
-      const [
-        userCount,
-        locationCount,
-        messageCount,
-        notificationCount,
-        deviceCount
-      ] = await Promise.all([
-        User.count(),
-        Location.count(),
-        Message.count(),
-        Notification.count(),
-        Device.count({ where: { active: true } })
-      ]);
+      const [[u]] = await db.query('SELECT COUNT(*) as total FROM utilizadores');
+      const [[l]] = await db.query('SELECT COUNT(*) as total FROM locais');
+      const [[m]] = await db.query('SELECT COUNT(*) as total FROM mensagens');
+      const [[n]] = await db.query('SELECT COUNT(*) as total FROM logs_mensagens');
+      const [[d]] = await db.query('SELECT COUNT(*) as total FROM chaves_publicas');
 
       res.json({
         success: true,
         data: {
-          users: userCount,
-          locations: locationCount,
-          messages: messageCount,
-          notifications: notificationCount,
-          devices: deviceCount
+          users: u.total,
+          locations: l.total,
+          messages: m.total,
+          messageLogs: n.total,
+          publicKeys: d.total
         }
       });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao obter estatísticas'
-      });
+      res.status(500).json({ success: false, message: 'Erro ao obter estatísticas' });
     }
   }
 };

@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  # Use this override only on Linux hosts when you want the containers to share the host network.
+  # This makes the services reachable on your host's LAN IP without port mappings (useful for physical devices).
+  app:
+    network_mode: host
+  db:
+    network_mode: host
+
+# Usage:
+# docker compose -f docker-compose.yml -f docker-compose.override.host.yml up --build
+# WARNING: network_mode: host only works on Linux and bypasses port mappings.

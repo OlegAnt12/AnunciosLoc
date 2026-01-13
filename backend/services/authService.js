@@ -1,6 +1,6 @@
 const db = require('../config/database');
 const bcrypt = require('bcryptjs');
-const { generateSessionId } = require('../middleware/auth');
+const { generateSessionId } = require('../utils/auth');
 const config = require('../config/environment');
 
 class AuthService {
