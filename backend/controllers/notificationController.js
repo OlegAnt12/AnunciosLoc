@@ -38,7 +38,14 @@ const notificationController = {
   },
 
   async deleteNotification(req, res) {
-    res.status(501).json({ success: false, message: 'Notificação - remoção não implementada' });
+    try {
+      const id = req.params.id ? parseInt(req.params.id, 10) : null;
+      if (!id) return res.status(400).json({ success: false, message: 'ID inválido' });
+      await notificationService.deleteNotification(req.userId, id);
+      res.json({ success: true, message: 'Notificação removida' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message || 'Erro ao remover notificação' });
+    }
   }
 };
 

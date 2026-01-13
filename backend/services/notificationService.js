@@ -85,6 +85,17 @@ class NotificationService {
       );
     }
   }
+
+  async deleteNotification(userId, id) {
+    // Only allow deletion if the notification belongs to the user
+    const [rows] = await db.query('SELECT id FROM logs_mensagens WHERE id = ? AND utilizador_id = ?', [id, userId]);
+    if (!rows || rows.length === 0) {
+      throw new Error('Notificação não encontrada ou sem permissão');
+    }
+
+    await db.query('DELETE FROM logs_mensagens WHERE id = ?', [id]);
+    return true;
+  }
 }
 
 module.exports = new NotificationService();
