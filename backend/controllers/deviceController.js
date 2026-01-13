@@ -19,6 +19,16 @@ const deviceController = {
     }
   },
 
+  async updateConnectivity(req, res) {
+    try {
+      const deviceId = parseInt(req.params.id, 10);
+      await deviceService.updateDeviceConnectivity(deviceId, req.body);
+      res.json({ success: true, message: 'Conectividade atualizada' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message || 'Erro ao atualizar conectividade' });
+    }
+  },
+
   async unregisterDevice(req, res) {
     try {
       await deviceService.deactivateDevice(parseInt(req.params.id, 10), req.userId);

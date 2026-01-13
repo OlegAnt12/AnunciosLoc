@@ -32,6 +32,21 @@ describe('Devices API', () => {
     expect(Array.isArray(res.body.data)).toBeTruthy();
   });
 
+  test('POST /api/devices/:id/connectivity - update connectivity', async () => {
+    if (!deviceId) return;
+    const res = await request(app)
+      .post(`/api/devices/${deviceId}/connectivity`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ tipo_conexao: 'WIFI', endereco_ip: '192.168.1.100', endereco_mac: 'AA:BB:CC:DD:EE:FF', online: true });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const listRes = await request(app).get('/api/devices').set('Authorization', `Bearer ${token}`);
+    expect(listRes.status).toBe(200);
+    expect(listRes.body.data.length).toBeGreaterThan(0);
+  });
+
   test('DELETE /api/devices/:id - remove device', async () => {
     if (!deviceId) return;
     const res = await request(app).delete(`/api/devices/${deviceId}`).set('Authorization', `Bearer ${token}`);
