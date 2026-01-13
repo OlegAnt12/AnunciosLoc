@@ -1,114 +1,53 @@
-const { Notification } = require('../models/Notification');
+const notificationService = require('../services/notificationService');
 
 const notificationController = {
   async getNotifications(req, res) {
     try {
-      const notifications = await Notification.findAll({
-        where: { user_id: req.userId },
-        order: [['createdAt', 'DESC']]
-      });
-
-      res.json({
-        success: true,
-        data: notifications
-      });
+      const notifications = await notificationService.getUserNotifications(req.userId);
+      res.json({ success: true, data: notifications });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao obter notificações'
-      });
+      res.status(500).json({ success: false, message: 'Erro ao obter notificações' });
+    }
+  },
+
+  async getUnreadCount(req, res) {
+    try {
+      const count = await notificationService.getUnreadNotificationCount(req.userId);
+      res.json({ success: true, data: { count } });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Erro ao obter contagem de notificações' });
     }
   },
 
   async markAsRead(req, res) {
     try {
-      const notification = await Notification.findByPk(req.params.id);
-
-      if (!notification) {
-        return res.status(404).json({
-          success: false,
-          message: 'Notificação não encontrada'
-        });
-      }
-
-      // Verificar se a notificação pertence ao utilizador
-      if (notification.user_id !== req.userId) {
-        return res.status(403).json({
-          success: false,
-          message: 'Não tem permissão para esta notificação'
-        });
-      }
-
-      await notification.update({ read: true });
-
-      res.json({
-        success: true,
-        message: 'Notificação marcada como lida'
-      });
+      const id = req.params.id ? parseInt(req.params.id, 10) : null;
+      await notificationService.markNotificationsAsRead(req.userId, id);
+      res.json({ success: true, message: 'Notificações marcadas como lidas' });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao atualizar notificação'
-      });
+      res.status(500).json({ success: false, message: 'Erro ao atualizar notificação' });
     }
   },
 
   async createNotification(req, res) {
     try {
-      const { user_id, title, message, type, related_entity, related_entity_id } = req.body;
+      const { user_id, mensagem_id, acao = 'NOTIFICACAO', detalhes = '' } = req.body;
 
-      const notification = await Notification.create({
-        user_id,
-        title,
-        message,
-        type,
-        related_entity,
-        related_entity_id
-      });
+      if (!user_id || !mensagem_id) return res.status(400).json({ success: false, message: 'user_id e mensagem_id são obrigatórios' });
 
-      res.status(201).json({
-        success: true,
-        message: 'Notificação criada com sucesso',
-        data: notification
-      });
+      await require('../config/database').execute(
+        'INSERT INTO logs_mensagens (mensagem_id, acao, utilizador_id, detalhes) VALUES (?, ?, ?, ?)',
+        [mensagem_id, acao, user_id, detalhes]
+      );
+
+      res.status(201).json({ success: true, message: 'Notificação criada' });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao criar notificação'
-      });
+      res.status(500).json({ success: false, message: 'Erro ao criar notificação' });
     }
   },
 
   async deleteNotification(req, res) {
-    try {
-      const notification = await Notification.findByPk(req.params.id);
-
-      if (!notification) {
-        return res.status(404).json({
-          success: false,
-          message: 'Notificação não encontrada'
-        });
-      }
-
-      if (notification.user_id !== req.userId) {
-        return res.status(403).json({
-          success: false,
-          message: 'Não tem permissão para eliminar esta notificação'
-        });
-      }
-
-      await notification.destroy();
-
-      res.json({
-        success: true,
-        message: 'Notificação eliminada com sucesso'
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao eliminar notificação'
-      });
-    }
+    res.status(501).json({ success: false, message: 'Notificação - remoção não implementada' });
   }
 };
 

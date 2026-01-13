@@ -1,7 +1,13 @@
 {
-  "name": "Node 20 (devcontainer)",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
-  "forwardPorts": [3000],
-  "postCreateCommand": "npm ci || true",
-  "remoteUser": "vscode"
+  "name": "AnunciosLoc Dev",
+  "dockerComposeFile": ["docker-compose.yml"],
+  "service": "app",
+  "workspaceFolder": "/workspaces/AnunciosLoc",
+  "shutdownAction": "stopCompose",
+  "postCreateCommand": "bash -lc 'cd backend && npm install && cd ../Frontend && npm install && bash -lc \"until mysqladmin ping -h db --silent; do sleep 1; done\" && cd ../backend && npm run db:init'",
+  "remoteUser": "node",
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]n    }
+  }
 }

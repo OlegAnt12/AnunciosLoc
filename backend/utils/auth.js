@@ -24,10 +24,16 @@ const comparePassword = async (password, hashedPassword) => {
   return await bcrypt.compare(password, hashedPassword);
 };
 
+const generateSessionId = () => {
+  const crypto = require('crypto');
+  return crypto.randomBytes(16).toString('hex');
+};
+
 module.exports = {
   generateToken,
   verifyToken,
   hashPassword,
   comparePassword,
+  generateSessionId,
   JWT_SECRET
 };

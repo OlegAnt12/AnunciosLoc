@@ -4,22 +4,66 @@ const notificationService = require('./notificationService');
 
 class MessageService {
   async createMessage(messageData, userId) {
-    const {
-      titulo,
-      conteudo,
-      local_id,
-      tipo_politica = 'WHITELIST',
-      modo_entrega = 'CENTRALIZADO',
-      data_inicio,
-      data_fim,
-      restricoes = []
-    } = messageData;
+    // Accept both English and Portuguese keys for frontend compatibility
+    const titulo = messageData.titulo || messageData.title || '';
+    const conteudo = messageData.conteudo || messageData.content || '';
+    const local_id = messageData.local_id || messageData.location_id;
+
+    // Map policy types: 'public' -> no restrictions (WHITELIST with no rules)
+    const rawPolicy = messageData.tipo_politica || messageData.policy_type || 'WHITELIST';
+    const tipo_politica = (rawPolicy || '').toUpperCase();
+
+    const modo_entrega = messageData.modo_entrega || messageData.delivery_mode || 'CENTRALIZADO';
+    const data_inicio = messageData.data_inicio || messageData.start_time;
+    const data_fim = messageData.data_fim || messageData.end_time;
+
+    // policy rules mapping
+    const rawRules = messageData.restricoes || messageData.policy_rules || [];
+    const restricoes = rawRules.map(r => ({ chave: r.chave || r.key, valor: r.valor || r.value }));
 
     return await db.transaction(async (connection) => {
+      let resolvedLocalId = local_id;
+
+      // If location coordinates are provided inline, create a local entry
+      if (!resolvedLocalId && (messageData.latitude || messageData.longitude || (Array.isArray(messageData.coordenadas) && messageData.coordenadas.length > 0))) {
+        // Create a descriptive name
+        const name = messageData.nome_local || `Local criado via mensagem por ${userId}`;
+        // Determine type
+        const type = (messageData.tipo_local || (messageData.coordenadas ? 'WIFI' : 'GPS')).toUpperCase();
+
+        // Get type id
+        const [tipoRows] = await connection.execute('SELECT id FROM tipos_coordenada WHERE nome = ?', [type]);
+        if (tipoRows.length === 0) throw new Error('Tipo de coordenada inválido para local inserido');
+        const tipoCoordenadaId = tipoRows[0].id;
+
+        const [localResult] = await connection.execute(
+          `INSERT INTO locais (nome, descricao, tipo_coordenada_id, criador_id) VALUES (?, ?, ?, ?)`,
+          [name, messageData.descricao || '', tipoCoordenadaId, userId]
+        );
+        resolvedLocalId = localResult.insertId;
+
+        // Insert coordinates
+        if (type === 'GPS' && (messageData.latitude || messageData.longitude)) {
+          const lat = messageData.latitude;
+          const lon = messageData.longitude;
+          const raio = messageData.raio_metros || messageData.radius_m || 500;
+          await connection.execute(
+            `INSERT INTO coordenadas_gps (local_id, latitude, longitude, raio_metros) VALUES (?, ?, ?, ?)`,
+            [resolvedLocalId, lat, lon, raio]
+          );
+        } else if (type === 'WIFI' && Array.isArray(messageData.coordenadas)) {
+          for (const ssid of messageData.coordenadas) {
+            if (ssid && ssid.trim()) {
+              await connection.execute('INSERT INTO ssids_wifi (local_id, ssid) VALUES (?, ?)', [resolvedLocalId, ssid.trim()]);
+            }
+          }
+        }
+      }
+
       // Verificar se local existe
       const [locais] = await connection.execute(
         'SELECT id, nome FROM locais WHERE id = ? AND ativo = TRUE',
-        [local_id]
+        [resolvedLocalId]
       );
 
       if (locais.length === 0) {
@@ -74,10 +118,32 @@ class MessageService {
       );
 
       // Notificar utilizadores relevantes
-      await notificationService.notifyNewMessage(messageId, local_id);
+      await notificationService.notifyNewMessage(messageId, resolvedLocalId);
+
+      // Assign mulas for decentralized delivery
+      if ((modo_entrega || 'CENTRALIZADO').toUpperCase() === 'DESCENTRALIZADO') {
+        // Find active mulas with available capacity
+        const [candidates] = await connection.execute(
+          `SELECT cm.utilizador_id, cm.espaco_maximo_mensagens,
+                  COALESCE(SUM(CASE WHEN mm.entregue = FALSE THEN 1 ELSE 0 END), 0) as currently_assigned
+           FROM config_mulas cm
+           LEFT JOIN mulas_mensagens mm ON cm.utilizador_id = mm.mula_utilizador_id
+           WHERE cm.ativo = TRUE
+           GROUP BY cm.utilizador_id, cm.espaco_maximo_mensagens
+           HAVING currently_assigned < cm.espaco_maximo_mensagens
+           ORDER BY (cm.espaco_maximo_mensagens - currently_assigned) DESC
+           LIMIT 5`);
+
+        for (const candidate of candidates) {
+          await connection.execute(
+            `INSERT INTO mulas_mensagens (mensagem_id, mula_utilizador_id, publicador_utilizador_id) VALUES (?, ?, ?)`,
+            [messageId, candidate.utilizador_id, userId]
+          );
+        }
+      }
 
       // Invalidar cache
-      await cacheService.delete(`messages:location:${local_id}`);
+      await cacheService.delete(`messages:location:${resolvedLocalId}`);
       await cacheService.delete(`messages:user:${userId}`);
 
       return messageId;
@@ -201,6 +267,64 @@ class MessageService {
         local: message.local_nome,
         politica: message.tipo_politica_id
       };
+    });
+  }
+
+  async getMessageById(messageId) {
+    const [rows] = await db.query(
+      `SELECT m.*, u.username as autor, l.nome as local_nome, tp.nome as tipo_politica
+       FROM mensagens m
+       JOIN utilizadores u ON m.autor_id = u.id
+       JOIN locais l ON m.local_id = l.id
+       JOIN tipos_politica tp ON m.tipo_politica_id = tp.id
+       WHERE m.id = ? AND m.removida = FALSE`,
+      [messageId]
+    );
+
+    return rows[0] || null;
+  }
+
+  async updateMessage(messageId, userId, updates = {}) {
+    return await db.transaction(async (connection) => {
+      const [rows] = await connection.execute('SELECT autor_id FROM mensagens WHERE id = ? AND removida = FALSE', [messageId]);
+      if (rows.length === 0) throw new Error('Mensagem não encontrada');
+      if (rows[0].autor_id !== userId) throw new Error('Apenas o autor pode atualizar a mensagem');
+
+      const fields = [];
+      const params = [];
+
+      if (updates.titulo) {
+        fields.push('titulo = ?'); params.push(updates.titulo);
+      }
+      if (updates.conteudo) {
+        fields.push('conteudo = ?'); params.push(updates.conteudo);
+      }
+      if (updates.data_inicio) {
+        fields.push('data_inicio = ?'); params.push(updates.data_inicio);
+      }
+      if (updates.data_fim) {
+        fields.push('data_fim = ?'); params.push(updates.data_fim);
+      }
+
+      if (fields.length === 0) throw new Error('Nenhum campo válido para atualizar');
+
+      params.push(messageId);
+      await connection.execute(`UPDATE mensagens SET ${fields.join(', ')} WHERE id = ?`, params);
+
+      // Se tiver restrições atualizadas, substituir as antigas
+      if (Array.isArray(updates.restricoes)) {
+        await connection.execute('DELETE FROM restricoes_mensagem WHERE mensagem_id = ?', [messageId]);
+        for (const r of updates.restricoes) {
+          if (r.chave && r.valor) {
+            await connection.execute('INSERT INTO restricoes_mensagem (mensagem_id, chave, valor) VALUES (?, ?, ?)', [messageId, r.chave, r.valor]);
+          }
+        }
+      }
+
+      // Log de atualização
+      await connection.execute('INSERT INTO logs_mensagens (mensagem_id, acao, utilizador_id, detalhes) VALUES (?, ?, ?, ?)', [messageId, 'ATUALIZADA', userId, 'Mensagem atualizada']);
+
+      return true;
     });
   }
 

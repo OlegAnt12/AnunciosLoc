@@ -1,85 +1,58 @@
-const { User } = require('../models/User');
+const db = require('../config/database');
+const Profile = require('../models/Profile');
 
 const profileController = {
   async getProfile(req, res) {
     try {
-      const user = await User.findByPk(req.userId, {
-        attributes: { exclude: ['password'] }
-      });
-      
+      const userId = req.userId;
+
+      const [users] = await db.query('SELECT id, username, data_criacao as created_at, ativo FROM utilizadores WHERE id = ?', [userId]);
+      const user = users[0];
+
       if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'Utilizador não encontrado'
-        });
+        return res.status(404).json({ success: false, message: 'Utilizador não encontrado' });
       }
 
-      res.json({
-        success: true,
-        data: user
-      });
+      const profile = await Profile.getUserProfile(userId);
+
+      res.json({ success: true, data: { ...user, profile } });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao obter perfil'
-      });
+      res.status(500).json({ success: false, message: 'Erro ao obter perfil' });
     }
   },
 
   async updateProfile(req, res) {
     try {
-      const user = await User.findByPk(req.userId);
-      
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'Utilizador não encontrado'
-        });
+      const userId = req.userId;
+      const { profile = {} } = req.body; // expect { key: value }
+
+      // Ensure user exists
+      const [users] = await db.query('SELECT id FROM utilizadores WHERE id = ?', [userId]);
+      if (users.length === 0) return res.status(404).json({ success: false, message: 'Utilizador não encontrado' });
+
+      // Update provided profile keys
+      for (const [k, v] of Object.entries(profile)) {
+        await Profile.addKeyValue(userId, k, String(v));
       }
 
-      const { name, email, phone } = req.body;
-      await user.update({ name, email, phone });
+      const updatedProfile = await Profile.getUserProfile(userId);
 
-      res.json({
-        success: true,
-        message: 'Perfil atualizado com sucesso',
-        data: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone
-        }
-      });
+      res.json({ success: true, message: 'Perfil atualizado com sucesso', data: updatedProfile });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao atualizar perfil'
-      });
+      res.status(500).json({ success: false, message: 'Erro ao atualizar perfil' });
     }
   },
 
   async deleteProfile(req, res) {
     try {
-      const user = await User.findByPk(req.userId);
-      
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'Utilizador não encontrado'
-        });
-      }
+      const userId = req.userId;
 
-      await user.destroy();
+      // Soft-delete: mark user as inactive
+      await db.query('UPDATE utilizadores SET ativo = FALSE WHERE id = ?', [userId]);
 
-      res.json({
-        success: true,
-        message: 'Perfil eliminado com sucesso'
-      });
+      res.json({ success: true, message: 'Perfil desativado com sucesso' });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao eliminar perfil'
-      });
+      res.status(500).json({ success: false, message: 'Erro ao eliminar perfil' });
     }
   }
 };

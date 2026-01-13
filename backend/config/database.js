@@ -1,6 +1,9 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
+const { Sequelize } = require('sequelize');
+const config = require('./environment');
 
+// Pool MySQL (mysql2)
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
@@ -13,10 +16,34 @@ const dbConfig = {
 
 const pool = mysql.createPool(dbConfig);
 
-module.exports = pool;const { Sequelize } = require('sequelize');
-const config = require('./environment');
+// Helper wrappers so the rest of the code can use a consistent API
+const execute = (...args) => pool.execute(...args);
+const query = (...args) => pool.query(...args);
 
-// Configuração da conexão MySQL
+// Simple transaction helper API: db.transaction(async (conn) => { await conn.execute(...); })
+const transaction = async (worker) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const tx = {
+      execute: (...args) => connection.execute(...args),
+      query: (...args) => connection.query(...args),
+      commit: () => connection.commit(),
+      rollback: () => connection.rollback()
+    };
+
+    const result = await worker(tx);
+    await connection.commit();
+    connection.release();
+    return result;
+  } catch (err) {
+    await connection.rollback();
+    connection.release();
+    throw err;
+  }
+};
+
+// Sequelize (for parts that still use it)
 const sequelize = new Sequelize(config.DB_NAME, config.DB_USER, config.DB_PASSWORD, {
   host: config.DB_HOST,
   port: config.DB_PORT,
@@ -42,7 +69,6 @@ const connectDB = async () => {
   } catch (error) {
     console.error('❌ Erro ao conectar com MySQL:', error.message);
     
-    // Em desenvolvimento, não encerre o processo
     if (config.NODE_ENV === 'development') {
       console.log('⚠️  Continuando sem conexão com MySQL...');
       return false;
@@ -61,7 +87,6 @@ const testConnection = async () => {
   }
 };
 
-// Sincronizar modelos (apenas em desenvolvimento)
 const syncModels = async (force = false) => {
   if (config.NODE_ENV === 'development') {
     try {
@@ -74,8 +99,20 @@ const syncModels = async (force = false) => {
 };
 
 module.exports = {
+  pool,
+  execute,
+  query,
+  transaction,
   sequelize,
   connectDB,
   testConnection,
-  syncModels
+  syncModels,
+  // Close pool (used by tests to shutdown)
+  end: async () => {
+    try {
+      await pool.end();
+    } catch (err) {
+      console.warn('Warning while ending pool:', err.message);
+    }
+  }
 };

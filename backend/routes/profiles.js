@@ -18,4 +18,32 @@ router.put('/me', protect, profileController.updateProfile);
 // @access  Private
 router.delete('/me', protect, profileController.deleteProfile);
 
+// @desc    Adicionar/Atualizar uma chave de perfil para o utilizador autenticado
+// @route   POST /api/profiles/key
+// @access  Private
+router.post('/key', protect, async (req, res) => {
+  try {
+    const { key, value } = req.body;
+    if (!key) return res.status(400).json({ success: false, message: 'Chave é obrigatória' });
+    await require('../models/Profile').addKeyValue(req.userId, key, String(value));
+    res.json({ success: true, message: 'Chave adicionada/atualizada' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Erro ao adicionar chave' });
+  }
+});
+
+// @desc    Remover uma chave de perfil para o utilizador autenticado
+// @route   DELETE /api/profiles/key
+// @access  Private
+router.delete('/key', protect, async (req, res) => {
+  try {
+    const { key } = req.body;
+    if (!key) return res.status(400).json({ success: false, message: 'Chave é obrigatória' });
+    await require('../models/Profile').removeKey(req.userId, key);
+    res.json({ success: true, message: 'Chave removida' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Erro ao remover chave' });
+  }
+});
+
 module.exports = router;
