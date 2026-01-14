@@ -20,6 +20,7 @@ import HomeScreen from './src/components/Main/HomeScreen';
 import LocationsScreen from './src/components/Main/LocationsScreen';
 import ProfileScreen from './src/components/Main/ProfileScreen';
 import MessagesScreen from './src/components/Main/MessagesScreen';
+import MulesScreen from './src/components/Main/MulesScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -137,6 +138,17 @@ function MainTabs({ setShowCreateAd, isDarkMode }) {
         }}
       >
         {(props) => <NotificationsScreen {...props} />}
+      </Tab.Screen>
+      
+      <Tab.Screen 
+        name="Mulas"
+        options={{
+          tabBarIcon: ({ color, size, focused }) => (
+            <Icon name={focused ? 'truck' : 'truck-outline'} size={size} color={color} />
+          ),
+        }}
+      >
+        {(props) => <MulesScreen {...props} />}
       </Tab.Screen>
       
       <Tab.Screen 
