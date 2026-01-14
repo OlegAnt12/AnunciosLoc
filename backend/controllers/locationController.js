@@ -24,8 +24,8 @@ const locationController = {
   async getLocation(req, res) {
     try {
       const id = parseInt(req.params.id, 10);
-      const rows = await db.query('SELECT l.*, tc.nome as tipo_coordenada FROM locais l JOIN tipos_coordenada tc ON l.tipo_coordenada_id = tc.id WHERE l.id = ?', [id]);
-      const location = rows[0][0];
+      const [rows] = await db.query('SELECT l.*, tc.nome as tipo_coordenada FROM locais l JOIN tipos_coordenada tc ON l.tipo_coordenada_id = tc.id WHERE l.id = ?', [id]);
+      const location = rows[0] || null;
       if (!location) return res.status(404).json({ success: false, message: 'Localização não encontrada' });
 
       // Obter coordenadas
@@ -44,8 +44,17 @@ const locationController = {
   },
 
   async updateLocation(req, res) {
-    res.status(501).json({ success: false, message: 'Atualizar localização não implementado nesta versão' });
+    try {
+      const id = parseInt(req.params.id, 10);
+      const data = req.body;
+      // note: service signature is updateLocation(locationId, updateData, userId)
+      await locationService.updateLocation(id, data, req.userId);
+      res.json({ success: true, message: 'Localização atualizada' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message || 'Erro ao atualizar localização' });
+    }
   },
+
 
   async deleteLocation(req, res) {
     try {

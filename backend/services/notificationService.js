@@ -34,7 +34,7 @@ class NotificationService {
   }
 
   async getUserNotifications(userId, limit = 50) {
-    const notifications = await db.query(`
+    const [rows] = await db.query(`
       SELECT 
         lm.id,
         lm.mensagem_id,
@@ -53,7 +53,7 @@ class NotificationService {
       LIMIT ?
     `, [userId, limit]);
 
-    return notifications;
+    return rows;
   }
 
   async getUnreadNotificationCount(userId) {
@@ -84,6 +84,17 @@ class NotificationService {
         [userId, userId]
       );
     }
+  }
+
+  async deleteNotification(userId, id) {
+    // Only allow deletion if the notification belongs to the user
+    const [rows] = await db.query('SELECT id FROM logs_mensagens WHERE id = ? AND utilizador_id = ?', [id, userId]);
+    if (!rows || rows.length === 0) {
+      throw new Error('Notificação não encontrada ou sem permissão');
+    }
+
+    await db.query('DELETE FROM logs_mensagens WHERE id = ?', [id]);
+    return true;
   }
 }
 

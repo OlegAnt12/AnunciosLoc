@@ -31,6 +31,20 @@ describe('Locations API', () => {
     locId = res.body.data.id;
   });
 
+  test('PUT /api/locations/:id - update location', async () => {
+    const res = await request(app)
+      .put(`/api/locations/${locId}`)
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ nome: 'Updated Park', coordenadas: { latitude: 41.1580, longitude: -8.6290, raio_metros: 250 } });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const getRes = await request(app).get(`/api/locations/${locId}`);
+    expect(getRes.status).toBe(200);
+    expect(getRes.body.data.nome).toBe('Updated Park');
+    expect(getRes.body.data.coordenadas).toHaveProperty('latitude');
+  });
   test('GET /api/locations/:id - get location and coordinates', async () => {
     const res = await request(app).get(`/api/locations/${locId}`);
     expect(res.status).toBe(200);
