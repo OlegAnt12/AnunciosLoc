@@ -27,8 +27,10 @@ export const AuthProvider = ({ children }) => {
       const token = await AsyncStorage.getItem('userToken');
       
       if (userData && token) {
-        const user = JSON.parse(userData);
-        setUser(user);
+        const parsed = JSON.parse(userData);
+        // Normalize stored payloads that may contain token/session metadata
+        const actualUser = parsed.user || parsed;
+        setUser(actualUser);
         setIsAuthenticated(true);
       }
     } catch (error) {
@@ -43,9 +45,17 @@ export const AuthProvider = ({ children }) => {
       const result = await authService.login(credentials);
       
       if (result.success) {
-        setUser(result.data);
+        // result.data may contain { user, sessionId, token }
+        const actualUser = result.data.user || result.data;
+        setUser(actualUser);
         setIsAuthenticated(true);
-        return { success: true, data: result.data };
+        // Ensure we persist a normalized user object in storage (keep token separately)
+        try {
+          await AsyncStorage.setItem('userData', JSON.stringify(actualUser));
+        } catch (err) {
+          console.warn('Failed to persist normalized user data', err);
+        }
+        return { success: true, data: actualUser };
       } else {
         return { success: false, message: result.message };
       }
@@ -59,9 +69,15 @@ export const AuthProvider = ({ children }) => {
       const result = await authService.register(userData);
       
       if (result.success) {
-        setUser(result.data);
+        const actualUser = result.data || result.data?.user || result.data;
+        setUser(actualUser);
         setIsAuthenticated(true);
-        return { success: true, data: result.data };
+        try {
+          await AsyncStorage.setItem('userData', JSON.stringify(actualUser));
+        } catch (err) {
+          console.warn('Failed to persist normalized user data', err);
+        }
+        return { success: true, data: actualUser };
       } else {
         return { success: false, message: result.message };
       }
@@ -80,9 +96,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const updateUser = (userData) => {
+  const updateUser = async (userData) => {
     setUser(userData);
-    AsyncStorage.setItem('userData', JSON.stringify(userData));
+    try {
+      await AsyncStorage.setItem('userData', JSON.stringify(userData));
+    } catch (err) {
+      console.warn('Failed to persist userData in updateUser', err);
+    }
   };
 
   const value = {

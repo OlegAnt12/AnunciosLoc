@@ -31,7 +31,10 @@ export default function ProfileScreen({ user, onLogout }) {
     try {
       const result = await profileService.getUserProfile(user.id);
       if (result.success) {
-        setProfileKeys(result.data?.keys || []);
+        // Backend returns { id, username, created_at, profile } where profile is an object map
+        const profileObj = result.data?.profile || {};
+        const keys = Object.entries(profileObj).map(([key, value]) => ({ key, value }));
+        setProfileKeys(keys);
       }
     } catch (error) {
       console.error('Error loading profile data:', error);
@@ -42,11 +45,11 @@ export default function ProfileScreen({ user, onLogout }) {
     try {
       // Carregar estatísticas de mensagens enviadas
       const sentResult = await messageService.getSentMessages(user.id);
-      const messagesSent = sentResult.success ? (sentResult.data?.length || 0) : 0;
+      const messagesSent = sentResult.success ? (sentResult.data?.messages?.length || 0) : 0;
 
       // Carregar estatísticas de mensagens recebidas
       const receivedResult = await messageService.getUserMessages(user.id);
-      const messagesReceived = receivedResult.success ? (receivedResult.data?.length || 0) : 0;
+      const messagesReceived = receivedResult.success ? (receivedResult.data?.messages?.length || 0) : 0;
 
       // Carregar estatísticas de localizações
       const locationsResult = await locationService.getUserLocations(user.id);

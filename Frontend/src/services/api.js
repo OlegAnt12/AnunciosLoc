@@ -283,7 +283,8 @@ export const profileService = {
 
   async getUserProfile(userId) {
     try {
-      const response = await api.get(`/users/${userId}/profile`);
+      // Backend exposes user profile at GET /api/users/:id (contains profile field)
+      const response = await api.get(`/users/${userId}`);
       return response.data;
     } catch (error) {
       throw {

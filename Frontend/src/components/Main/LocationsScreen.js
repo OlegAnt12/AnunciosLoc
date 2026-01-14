@@ -489,6 +489,37 @@ export default function LocationsScreen({ user }) {
                   placeholderTextColor="#636E72"
                 />
 
+                {/* Tipo de Local (GPS ou WIFI) */}
+                <View style={{ marginTop: 12, marginBottom: 8 }}>
+                  <Text style={{ color: '#2D3436', marginBottom: 8, fontWeight: '600' }}>Tipo</Text>
+                  <View style={{ flexDirection: 'row' }}>
+                    <TouchableOpacity
+                      style={[styles.typeOption, newLocation.type === 'gps' && styles.typeOptionSelected]}
+                      onPress={() => setNewLocation({ ...newLocation, type: 'gps' })}
+                    >
+                      <Text style={[styles.typeOptionText, newLocation.type === 'gps' && styles.typeOptionTextSelected]}>GPS</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.typeOption, newLocation.type === 'wifi' && styles.typeOptionSelected]}
+                      onPress={() => setNewLocation({ ...newLocation, type: 'wifi' })}
+                    >
+                      <Text style={[styles.typeOptionText, newLocation.type === 'wifi' && styles.typeOptionTextSelected]}>Wi‑Fi (SSID)</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {newLocation.type === 'wifi' && (
+                    <View style={{ marginTop: 12 }}>
+                      <Text style={{ color: '#2D3436', marginBottom: 8, fontWeight: '600' }}>SSID</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="Nome da rede Wi‑Fi (SSID)"
+                        value={newLocation.wifi_ssid || ''}
+                        onChangeText={(text) => setNewLocation({ ...newLocation, wifi_ssid: text })}
+                        placeholderTextColor="#636E72"
+                      />
+                    </View>
+                  )}
+
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>Posição no Mapa</Text>
                   <TouchableOpacity 
@@ -1028,6 +1059,25 @@ const styles = StyleSheet.create({
   },
   radiusSelector: {
     marginBottom: 20,
+  },
+  typeOption: {
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#DFE6E9',
+    backgroundColor: '#F8F9FA',
+    marginRight: 8,
+  },
+  typeOptionSelected: {
+    backgroundColor: '#FF6B35',
+    borderColor: '#FF6B35'
+  },
+  typeOptionText: {
+    color: '#2D3436',
+    fontWeight: '600'
+  },
+  typeOptionTextSelected: {
+    color: '#FFF'
   },
   radiusLabel: {
     color: '#636E72',
