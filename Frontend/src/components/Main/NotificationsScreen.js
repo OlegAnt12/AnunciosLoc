@@ -15,7 +15,9 @@ export default function NotificationsScreen() {
       const res = await notificationService.getNotifications(50);
       const data = res.data || [];
       setItems(data);
-      setCount(data.length);
+      // Use the unread count endpoint for accurate badge
+      const cntRes = await notificationService.getCount();
+      setCount(cntRes.data?.count || 0);
     } catch (err) {
       console.log('Erro ao obter notificações', err);
     } finally {
@@ -31,7 +33,9 @@ export default function NotificationsScreen() {
     try {
       await notificationService.deleteNotification(id);
       setItems((s) => s.filter((it) => it.id !== id));
-      setCount((c) => Math.max(0, c - 1));
+      // refresh accurate count
+      const cntRes = await notificationService.getCount();
+      setCount(cntRes.data?.count || 0);
     } catch (err) {
       console.log('Erro ao eliminar notificação', err);
     }
@@ -41,7 +45,9 @@ export default function NotificationsScreen() {
     try {
       await notificationService.markAsRead(id);
       setItems((s) => s.filter((it) => it.id !== id));
-      setCount((c) => Math.max(0, c - 1));
+      // refresh accurate count
+      const cntRes = await notificationService.getCount();
+      setCount(cntRes.data?.count || 0);
     } catch (err) {
       console.log('Erro ao marcar como lida', err);
     }
