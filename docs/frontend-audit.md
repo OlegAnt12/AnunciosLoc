@@ -32,6 +32,7 @@ Map frontend API usage (calls in `Frontend/src`) to backend endpoints and note m
   - PUT `/notifications/:id/read` → Backend: PUT `/api/notifications/:id/read` ✅
 
 ## Notes / Next steps
-- Add UI to surface notifications (count badge, list, dismiss). No frontend components currently use notifications API; I created a small `notificationService` to make integration straightforward.
-- Run dynamic tests (Expo + backend) to verify runtime behaviors (user flows, auth tokens and protected routes) — will do after CI as requested.
+- Added UI: created `Notifications` tab and screen (list, mark-as-read, delete) and a small `notificationService` to make integration straightforward.
+- Added a `Notifications` tab in the app using the existing `IconSymbol` and preserved the app's theming (`ThemedText`, `ThemedView`, shared styles).
+- Next: run dynamic tests (Expo + backend) to verify runtime behaviours (user flows, auth tokens and protected routes) — will proceed once CI is green as requested.
 
