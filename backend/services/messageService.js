@@ -6,8 +6,8 @@ class MessageService {
   async createMessage(messageData, userId) {
     // Accept both English and Portuguese keys for frontend compatibility
     const titulo = messageData.titulo || messageData.title || '';
-    const conteudo = messageData.conteudo || messageData.content || '';
-    const local_id = messageData.local_id || messageData.location_id;
+    const conteudo = messageData.conteudo || messageData.content || messageData.body || '';
+    const local_id = messageData.local_id || messageData.location_id || messageData.locationId || null;
 
     // Map policy types: 'public' -> no restrictions (WHITELIST with no rules)
     const rawPolicy = messageData.tipo_politica || messageData.policy_type || 'WHITELIST';
@@ -96,7 +96,7 @@ class MessageService {
         `INSERT INTO mensagens 
          (titulo, conteudo, autor_id, local_id, tipo_politica_id, modo_entrega, data_inicio, data_fim) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [titulo, conteudo, userId, local_id, politicaId, modo_entrega, dataInicio, dataFim]
+        [titulo, conteudo, userId, resolvedLocalId, politicaId, modo_entrega, dataInicio, dataFim]
       );
 
       const messageId = messageResult.insertId;
