@@ -34,5 +34,6 @@ Map frontend API usage (calls in `Frontend/src`) to backend endpoints and note m
 ## Notes / Next steps
 - Added UI: created `Notifications` tab and screen (list, mark-as-read, delete) and a small `notificationService` to make integration straightforward.
 - Added a `Notifications` tab in the app using the existing `IconSymbol` and preserved the app's theming (`ThemedText`, `ThemedView`, shared styles).
+- Added a `NotificationsProvider` that polls the unread count and exposes `count`/`refreshCount` for the app; added a dynamic badge in the tab bar to surface unread notifications.
 - Next: run dynamic tests (Expo + backend) to verify runtime behaviours (user flows, auth tokens and protected routes) — will proceed once CI is green as requested.
 
