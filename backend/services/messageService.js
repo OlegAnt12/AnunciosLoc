@@ -91,12 +91,12 @@ class MessageService {
         throw new Error('Data de início deve ser anterior à data de fim');
       }
 
-      // Inserir mensagem
+      // Inserir mensagem (usar o local resolvido criado inline, se houver)
       const [messageResult] = await connection.execute(
         `INSERT INTO mensagens 
          (titulo, conteudo, autor_id, local_id, tipo_politica_id, modo_entrega, data_inicio, data_fim) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [titulo, conteudo, userId, local_id, politicaId, modo_entrega, dataInicio, dataFim]
+        [titulo, conteudo, userId, resolvedLocalId, politicaId, modo_entrega, dataInicio, dataFim]
       );
 
       const messageId = messageResult.insertId;
