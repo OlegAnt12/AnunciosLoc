@@ -7,6 +7,7 @@ import notificationService from '@/services/notificationService';
 import { useIsFocused } from 'expo-router';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useNotifications } from '@/contexts/NotificationsContext';
 
 export default function NotificationsScreen() {
   const [items, setItems] = useState([]);
@@ -30,10 +31,14 @@ export default function NotificationsScreen() {
     if (isFocused) load();
   }, [isFocused]);
 
+  const { refreshCount, setCount } = useNotifications();
+
   const handleDelete = async (id) => {
     try {
       await notificationService.deleteNotification(id);
       setItems((s) => s.filter((it) => it.id !== id));
+      // update global count
+      setCount((c) => Math.max(0, c - 1));
     } catch (err) {
       console.log('Erro ao eliminar notificação', err);
     }
@@ -44,6 +49,7 @@ export default function NotificationsScreen() {
       await notificationService.markAsRead(id);
       // Optimistically remove or mark as read locally
       setItems((s) => s.filter((it) => it.id !== id));
+      setCount((c) => Math.max(0, c - 1));
     } catch (err) {
       console.log('Erro ao marcar como lida', err);
     }
