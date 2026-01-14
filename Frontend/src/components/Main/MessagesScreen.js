@@ -26,6 +26,7 @@ export default function MessagesScreen({ user }) {
   const [deliveryMode, setDeliveryMode] = useState('CENTRALIZADO');
   const [policyType, setPolicyType] = useState('WHITELIST');
   const [policyRules, setPolicyRules] = useState([{ chave: '', valor: '' }]);
+  const [newLocationName, setNewLocationName] = useState('');
   const [inlineType, setInlineType] = useState('GPS'); // GPS or WIFI
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
@@ -124,6 +125,9 @@ export default function MessagesScreen({ user }) {
     // Add policy rules if provided
     const rules = policyRules.map(r => ({ chave: r.chave, valor: r.valor })).filter(r => r.chave && r.valor);
     if (rules.length) payload.restricoes = rules;
+
+    // Optional inline location name
+    if (newLocationName && newLocationName.trim()) payload.nome_local = newLocationName.trim();
 
     // attach inline location data if provided
     if (inlineType === 'GPS' && latitude && longitude) {
@@ -333,6 +337,8 @@ export default function MessagesScreen({ user }) {
 
           <TextInput placeholder="Título" value={newTitle} onChangeText={setNewTitle} style={styles.input} />
           <TextInput placeholder="Conteúdo" value={newContent} onChangeText={setNewContent} style={[styles.input, { height: 120 }]} multiline />
+
+          <TextInput placeholder="Nome do local (opcional)" value={newLocationName} onChangeText={setNewLocationName} style={styles.input} />
 
           {/* Delivery mode selector */}
           <View style={{ flexDirection: 'row', marginBottom: 8 }}>
