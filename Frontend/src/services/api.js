@@ -283,11 +283,24 @@ export const profileService = {
 
   async getUserProfile(userId) {
     try {
-      const response = await api.get(`/users/${userId}/profile`);
+      const endpoint = userId ? `/users/${userId}` : '/profiles/me';
+      const response = await api.get(endpoint);
       return response.data;
     } catch (error) {
       throw {
         message: error.userMessage || 'Erro ao carregar perfil',
+        details: error.response?.data,
+      };
+    }
+  },
+
+  async updateProfile(updates) {
+    try {
+      const response = await api.put('/profiles/me', { profile: updates });
+      return response.data;
+    } catch (error) {
+      throw {
+        message: error.userMessage || 'Erro ao atualizar perfil',
         details: error.response?.data,
       };
     }

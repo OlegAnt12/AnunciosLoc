@@ -41,9 +41,11 @@ export default function LoginScreen({ isDarkMode, toggleTheme }) {
         return;
       }
 
-      const result = await login({ email, password });
+      const result = await login({ username: email, password });
       if (result.success) {
-        Alert.alert('Sucesso', `Bem-vindo de volta, ${result.data.name}!`);
+        Alert.alert('Sucesso', `Bem-vindo de volta, ${result.data.username || result.data.name || 'utilizador'}!`);
+      } else {
+        Alert.alert('Erro', result.message || 'Credenciais inválidas');
       }
     } catch (error) {
       console.log('❌ Erro detalhado no login:', error);

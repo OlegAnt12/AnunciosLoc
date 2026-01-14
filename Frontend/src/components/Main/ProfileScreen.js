@@ -31,7 +31,12 @@ export default function ProfileScreen({ user, onLogout }) {
     try {
       const result = await profileService.getUserProfile(user.id);
       if (result.success) {
-        setProfileKeys(result.data?.keys || []);
+        // Backend returns { success: true, data: { id, username, ..., profile: { key: value } } }
+        const data = result.data || {};
+        const profileObj = data.profile || {};
+        const keys = Object.keys(profileObj).map(k => ({ key: k, value: profileObj[k] }));
+        setProfileKeys(keys);
+        setProfileData(prev => ({ ...prev, ...data }));
       }
     } catch (error) {
       console.error('Error loading profile data:', error);

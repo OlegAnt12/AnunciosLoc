@@ -27,8 +27,10 @@ export const AuthProvider = ({ children }) => {
       const token = await AsyncStorage.getItem('userToken');
       
       if (userData && token) {
-        const user = JSON.parse(userData);
-        setUser(user);
+        const parsed = JSON.parse(userData);
+        // Normalizar se o backend meter user nested em data.user ou data
+        const normalizedUser = parsed.user || parsed;
+        setUser(normalizedUser);
         setIsAuthenticated(true);
       }
     } catch (error) {
@@ -43,9 +45,15 @@ export const AuthProvider = ({ children }) => {
       const result = await authService.login(credentials);
       
       if (result.success) {
-        setUser(result.data);
+        const normalized = result.data.user || result.data;
+        setUser(normalized);
         setIsAuthenticated(true);
-        return { success: true, data: result.data };
+        // Persist token and userData
+        if (result.data.token) {
+          await AsyncStorage.setItem('userToken', result.data.token);
+        }
+        await AsyncStorage.setItem('userData', JSON.stringify(result.data));
+        return { success: true, data: normalized };
       } else {
         return { success: false, message: result.message };
       }
@@ -59,9 +67,14 @@ export const AuthProvider = ({ children }) => {
       const result = await authService.register(userData);
       
       if (result.success) {
-        setUser(result.data);
+        const normalized = result.data.user || result.data;
+        setUser(normalized);
         setIsAuthenticated(true);
-        return { success: true, data: result.data };
+        if (result.data.token) {
+          await AsyncStorage.setItem('userToken', result.data.token);
+        }
+        await AsyncStorage.setItem('userData', JSON.stringify(result.data));
+        return { success: true, data: normalized };
       } else {
         return { success: false, message: result.message };
       }

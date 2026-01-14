@@ -7,6 +7,8 @@ import { View, TouchableOpacity, Text, Alert, useColorScheme } from 'react-nativ
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { NotificationsProvider, useNotifications } from './src/contexts/NotificationsContext';
+import NotificationsScreen from './src/components/Main/NotificationsScreen';
 
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -38,6 +40,7 @@ const CustomLightTheme = {
 
 function MainTabs({ setShowCreateAd, isDarkMode }) {
   const { user, logout } = useAuth();
+  const { count } = useNotifications();
 
   const handleLogout = () => {
     Alert.alert(
@@ -123,6 +126,18 @@ function MainTabs({ setShowCreateAd, isDarkMode }) {
       >
         {(props) => <MessagesScreen {...props} />}
       </Tab.Screen>
+
+      <Tab.Screen
+        name="Notificações"
+        options={{
+          tabBarIcon: ({ color, size, focused }) => (
+            <Icon name={focused ? 'bell' : 'bell-outline'} size={size} color={color} />
+          ),
+          tabBarBadge: count > 0 ? count : undefined,
+        }}
+      >
+        {(props) => <NotificationsScreen {...props} />}
+      </Tab.Screen>
       
       <Tab.Screen 
         name="Perfil" 
@@ -205,13 +220,15 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
-        <View style={{ flex: 1, backgroundColor: CustomLightTheme.colors.background }}>
-          <StatusBar style="auto" />
-          <AppNavigator 
-            isDarkMode={isDarkMode}
-            toggleTheme={toggleTheme}
-          />
-        </View>
+        <NotificationsProvider>
+          <View style={{ flex: 1, backgroundColor: CustomLightTheme.colors.background }}>
+            <StatusBar style="auto" />
+            <AppNavigator 
+              isDarkMode={isDarkMode}
+              toggleTheme={toggleTheme}
+            />
+          </View>
+        </NotificationsProvider>
       </AuthProvider>
     </GestureHandlerRootView>
   );
