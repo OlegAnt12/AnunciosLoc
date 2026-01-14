@@ -25,6 +25,7 @@ export default function MessagesScreen({ user }) {
   const [newContent, setNewContent] = useState('');
   const [deliveryMode, setDeliveryMode] = useState('CENTRALIZADO');
   const [policyType, setPolicyType] = useState('WHITELIST');
+  const [policyRules, setPolicyRules] = useState([{ chave: '', valor: '' }]);
   const [inlineType, setInlineType] = useState('GPS'); // GPS or WIFI
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
@@ -94,6 +95,18 @@ export default function MessagesScreen({ user }) {
     setSsids(newArr.length ? newArr : ['']);
   };
 
+  // Policy rules helpers
+  const addPolicyRule = () => setPolicyRules([...policyRules, { chave: '', valor: '' }]);
+  const updatePolicyRule = (index, key, value) => {
+    const newArr = [...policyRules];
+    newArr[index] = { ...newArr[index], [key]: value };
+    setPolicyRules(newArr);
+  };
+  const removePolicyRule = (index) => {
+    const newArr = policyRules.filter((_, i) => i !== index);
+    setPolicyRules(newArr.length ? newArr : [{ chave: '', valor: '' }]);
+  };
+
   const submitCreate = async () => {
     // basic validation
     if (!newTitle.trim() || !newContent.trim()) {
@@ -107,6 +120,10 @@ export default function MessagesScreen({ user }) {
       modo_entrega: deliveryMode,
       tipo_politica: policyType,
     };
+
+    // Add policy rules if provided
+    const rules = policyRules.map(r => ({ chave: r.chave, valor: r.valor })).filter(r => r.chave && r.valor);
+    if (rules.length) payload.restricoes = rules;
 
     // attach inline location data if provided
     if (inlineType === 'GPS' && latitude && longitude) {
@@ -316,6 +333,46 @@ export default function MessagesScreen({ user }) {
 
           <TextInput placeholder="Título" value={newTitle} onChangeText={setNewTitle} style={styles.input} />
           <TextInput placeholder="Conteúdo" value={newContent} onChangeText={setNewContent} style={[styles.input, { height: 120 }]} multiline />
+
+          {/* Delivery mode selector */}
+          <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+            <TouchableOpacity onPress={() => setDeliveryMode('CENTRALIZADO')} style={[styles.smallButton, deliveryMode === 'CENTRALIZADO' ? styles.smallButtonActive : null]}>
+              <Text style={deliveryMode === 'CENTRALIZADO' ? styles.smallButtonTextActive : styles.smallButtonText}>Centralizado</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setDeliveryMode('DESCENTRALIZADO')} style={[styles.smallButton, deliveryMode === 'DESCENTRALIZADO' ? styles.smallButtonActive : null]}>
+              <Text style={deliveryMode === 'DESCENTRALIZADO' ? styles.smallButtonTextActive : styles.smallButtonText}>Descentralizado</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Policy type selector */}
+          <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+            <TouchableOpacity onPress={() => setPolicyType('WHITELIST')} style={[styles.smallButton, policyType === 'WHITELIST' ? styles.smallButtonActive : null]}>
+              <Text style={policyType === 'WHITELIST' ? styles.smallButtonTextActive : styles.smallButtonText}>Lista Branca</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setPolicyType('BLACKLIST')} style={[styles.smallButton, policyType === 'BLACKLIST' ? styles.smallButtonActive : null]}>
+              <Text style={policyType === 'BLACKLIST' ? styles.smallButtonTextActive : styles.smallButtonText}>Lista Negra</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setPolicyType('PUBLIC')} style={[styles.smallButton, policyType === 'PUBLIC' ? styles.smallButtonActive : null]}>
+              <Text style={policyType === 'PUBLIC' ? styles.smallButtonTextActive : styles.smallButtonText}>Público</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Policy rules editor */}
+          <View style={{ marginBottom: 8 }}>
+            <Text style={{ marginBottom: 6, color: '#636E72' }}>Regras de política (opcional)</Text>
+            {policyRules.map((r, idx) => (
+              <View key={`rule-${idx}`} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                <TextInput placeholder="Chave" value={r.chave} onChangeText={(v) => updatePolicyRule(idx, 'chave', v)} style={[styles.input, { flex: 0.45, marginRight: 8 }]} />
+                <TextInput placeholder="Valor" value={r.valor} onChangeText={(v) => updatePolicyRule(idx, 'valor', v)} style={[styles.input, { flex: 0.45 }]} />
+                <TouchableOpacity onPress={() => removePolicyRule(idx)} style={{ marginLeft: 8 }}>
+                  <Icon name="close-circle" size={24} color="#E17055" />
+                </TouchableOpacity>
+              </View>
+            ))}
+            <TouchableOpacity onPress={addPolicyRule} style={{ marginTop: 6, alignSelf: 'flex-start' }}>
+              <Text style={{ color: '#FF6B35', fontWeight: '600' }}>+ Adicionar Regra</Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={{ flexDirection: 'row', marginBottom: 8 }}>
             <TouchableOpacity onPress={() => setInlineType('GPS')} style={[styles.smallButton, inlineType === 'GPS' ? styles.smallButtonActive : null]}>
