@@ -203,6 +203,18 @@ export const messageService = {
     }
   },
 
+  async receiveMessage(messageId, deviceId = null) {
+    try {
+      const response = await api.post(`/messages/${messageId}/receive`, { deviceId });
+      return response.data;
+    } catch (error) {
+      throw {
+        message: error.userMessage || 'Erro ao receber mensagem',
+        details: error.response?.data,
+      };
+    }
+  },
+
   async getMessagesForUser(userLocation) {
     try {
       const response = await api.post('/messages/nearby', userLocation);
@@ -249,6 +261,18 @@ export const locationService = {
     } catch (error) {
       throw {
         message: error.userMessage || 'Erro ao eliminar localização',
+        details: error.response?.data,
+      };
+    }
+  },
+
+  async updateLocation(locationId, updateData) {
+    try {
+      const response = await api.put(`/locations/${locationId}`, updateData);
+      return response.data;
+    } catch (error) {
+      throw {
+        message: error.userMessage || 'Erro ao atualizar localização',
         details: error.response?.data,
       };
     }
