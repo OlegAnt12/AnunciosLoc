@@ -41,6 +41,21 @@ class MuleService {
         [assignmentId]
       );
 
+      // Ensure we don't double-insert a delivery record for this mule & message
+      const [existing] = await connection.execute(
+        'SELECT id FROM entregas_mensagens WHERE mensagem_id = ? AND utilizador_id = ? AND recebida = TRUE',
+        [assignment.mensagem_id, mulaUserId]
+      );
+
+      if (existing.length === 0) {
+        await connection.execute(
+          `INSERT INTO entregas_mensagens
+           (mensagem_id, utilizador_id, dispositivo_origem, modo_entrega, recebida, data_rececao)
+           VALUES (?, ?, ?, ?, TRUE, NOW())`,
+          [assignment.mensagem_id, mulaUserId, 'MULA', 'DESCENTRALIZADO']
+        );
+      }
+
       // Log the action in logs_mensagens
       await connection.execute(
         'INSERT INTO logs_mensagens (mensagem_id, acao, utilizador_id, detalhes) VALUES (?, ?, ?, ?)',
