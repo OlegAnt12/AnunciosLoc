@@ -43,11 +43,14 @@ export default function MessagesScreen({ user }) {
       let result;
       if (activeTab === 'sent') {
         result = await messageService.getSentMessages(user.id);
-      } else {
+      } else if (activeTab === 'received') {
         result = await messageService.getUserMessages(user.id);
+      } else if (activeTab === 'nearby') {
+        // Try to fetch nearby messages (backend may use stored user location)
+        result = await messageService.getMessagesForUser({});
       }
       
-      if (result.success) {
+      if (result && result.success) {
         setMessages(result.data || []);
       } else {
         setMessages([]);
@@ -213,6 +216,29 @@ export default function MessagesScreen({ user }) {
     );
   };
 
+  const receiveNearbyMessage = async (messageId) => {
+    try {
+      setRefreshing(true);
+      const result = await messageService.receiveMessage(messageId);
+      if (result && result.success) {
+        Alert.alert('Sucesso', 'Mensagem recebida!');
+        // remove from nearby list
+        setMessages(messages.filter(m => m.id !== messageId));
+        // refresh received messages
+        if (activeTab === 'nearby') {
+          // optionally refresh received tab
+          // setActiveTab('received');
+          await loadMessages();
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao receber mensagem:', error);
+      Alert.alert('Erro', error.message || 'Falha ao receber mensagem');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const formatDateTime = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleString('pt-PT', {
@@ -267,6 +293,22 @@ export default function MessagesScreen({ user }) {
             fontWeight: '600' 
           }}>
             Mensagens Recebidas
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{ 
+            flex: 1, 
+            padding: 16, 
+            backgroundColor: activeTab === 'nearby' ? '#FF6B35' : 'transparent',
+            alignItems: 'center'
+          }}
+          onPress={() => setActiveTab('nearby')}
+        >
+          <Text style={{ 
+            color: activeTab === 'nearby' ? '#FFF' : '#2D3436', 
+            fontWeight: '600' 
+          }}>
+            Próximas
           </Text>
         </TouchableOpacity>
       </View>
