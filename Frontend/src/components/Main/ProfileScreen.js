@@ -21,6 +21,16 @@ export default function ProfileScreen({ user, onLogout }) {
     messagesReceived: 0,
     locationsCreated: 0
   });
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [bio, setBio] = useState('');
+
+  useEffect(() => {
+    if (profileData && profileData.profile) {
+      setDisplayName(profileData.profile.display_name || '');
+      setBio(profileData.profile.bio || '');
+    }
+  }, [profileData]);
 
   useEffect(() => {
     loadProfileData();
@@ -86,6 +96,32 @@ export default function ProfileScreen({ user, onLogout }) {
     }
   };
 
+  const handleSaveProfile = async () => {
+    try {
+      const updates = {};
+      if (displayName !== (profileData.profile && profileData.profile.display_name)) updates.display_name = displayName;
+      if (bio !== (profileData.profile && profileData.profile.bio)) updates.bio = bio;
+
+      if (Object.keys(updates).length === 0) {
+        setShowEditModal(false);
+        return;
+      }
+
+      const result = await profileService.updateProfile(updates);
+      if (result.success) {
+        Alert.alert('Sucesso', 'Perfil atualizado');
+        // Re-fetch profile data
+        await loadProfileData();
+        setShowEditModal(false);
+      } else {
+        Alert.alert('Erro', result.message || 'Não foi possível atualizar');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Erro', error.message || 'Erro ao atualizar perfil');
+    }
+  };
+
   const deleteKey = async (keyToDelete) => {
     Alert.alert(
       'Eliminar Chave',
@@ -125,7 +161,12 @@ export default function ProfileScreen({ user, onLogout }) {
       <ScrollView style={{ flex: 1, padding: 16 }}>
         {/* Profile Info Card */}
         <View style={{ backgroundColor: '#FFF', borderRadius: 16, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3.84, elevation: 3 }}>
-          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#2D3436', marginBottom: 16 }}>Meu Perfil</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#2D3436' }}>Meu Perfil</Text>
+            <TouchableOpacity onPress={() => setShowEditModal(true)}>
+              <Icon name="pencil" size={20} color="#FF6B35" />
+            </TouchableOpacity>
+          </View>
           
           <View style={{ marginBottom: 12 }}>
             <Text style={{ color: '#636E72', fontSize: 14, marginBottom: 4 }}>Username</Text>
@@ -143,6 +184,8 @@ export default function ProfileScreen({ user, onLogout }) {
               {formatDate(profileData.created_at)}
             </Text>
           </View>
+
+          {/* Edit profile modal trigger - modal defined below */}
         </View>
 
         {/* Stats Card */}
@@ -276,6 +319,63 @@ export default function ProfileScreen({ user, onLogout }) {
                 onPress={handleAddKey}
               >
                 <Text style={{ color: '#FFF', fontWeight: '600' }}>Adicionar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
+          <View style={{ backgroundColor: '#FFF', borderRadius: 16, padding: 20 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#2D3436' }}>
+                Editar Perfil
+              </Text>
+              <TouchableOpacity onPress={() => setShowEditModal(false)}>
+                <Icon name="close" size={24} color="#636E72" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ marginBottom: 12 }}>
+              <Text style={{ color: '#2D3436', marginBottom: 8, fontWeight: '600' }}>Nome de Exibição</Text>
+              <TextInput
+                style={{ borderWidth: 1, borderColor: '#DFE6E9', borderRadius: 8, padding: 12, fontSize: 16, backgroundColor: '#FFF' }}
+                placeholder="Nome para exibir"
+                value={displayName}
+                onChangeText={setDisplayName}
+              />
+            </View>
+
+            <View style={{ marginBottom: 20 }}>
+              <Text style={{ color: '#2D3436', marginBottom: 8, fontWeight: '600' }}>Biografia</Text>
+              <TextInput
+                style={{ borderWidth: 1, borderColor: '#DFE6E9', borderRadius: 8, padding: 12, fontSize: 16, backgroundColor: '#FFF', height: 80, textAlignVertical: 'top' }}
+                placeholder="Uma breve descrição sobre si"
+                value={bio}
+                onChangeText={setBio}
+                multiline
+              />
+            </View>
+
+            <View style={{ flexDirection: 'row' }}>
+              <TouchableOpacity
+                style={{ flex: 1, padding: 16, backgroundColor: '#DFE6E9', borderRadius: 8, marginRight: 8, alignItems: 'center' }}
+                onPress={() => setShowEditModal(false)}
+              >
+                <Text style={{ color: '#2D3436', fontWeight: '600' }}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ flex: 1, padding: 16, backgroundColor: '#FF6B35', borderRadius: 8, marginLeft: 8, alignItems: 'center' }}
+                onPress={handleSaveProfile}
+              >
+                <Text style={{ color: '#FFF', fontWeight: '600' }}>Guardar</Text>
               </TouchableOpacity>
             </View>
           </View>
