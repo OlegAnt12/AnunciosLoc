@@ -31,6 +31,7 @@ describe('Locations API', () => {
     locId = res.body.data.id;
   });
 
+<<<<<<< HEAD
   test('PUT /api/locations/:id - update location', async () => {
     const res = await request(app)
       .put(`/api/locations/${locId}`)
@@ -46,6 +47,8 @@ describe('Locations API', () => {
     expect(getRes.body.data.coordenadas).toHaveProperty('latitude');
   });
 
+=======
+>>>>>>> origin/main
   test('GET /api/locations/:id - get location and coordinates', async () => {
     const res = await request(app).get(`/api/locations/${locId}`);
     expect(res.status).toBe(200);

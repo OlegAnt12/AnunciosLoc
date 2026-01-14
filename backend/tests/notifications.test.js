@@ -10,6 +10,10 @@ beforeAll(async () => {
   userId = r.body.data.id;
 });
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 afterAll(async () => {
   if (global.__dbEnd) await global.__dbEnd();
 });
@@ -34,12 +38,31 @@ describe('Notifications API', () => {
     expect(before.body.success).toBe(true);
     expect(typeof before.body.data.count).toBe('number');
 
+<<<<<<< HEAD
     const createRes = await request(app)
       .post('/api/notifications')
       .set('Authorization', `Bearer ${authToken}`)
       .send({ user_id: userId, mensagem_id: 0, acao: 'NOTIFICACAO', detalhes: 'Test count' });
 
     expect(createRes.status).toBe(201);
+=======
+    // create a test message to attach notification
+    const m = await request(app)
+      .post('/api/messages')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ title: 'CountMsg', body: 'x', latitude: 41.1579, longitude: -8.6291, radius_m: 50 });
+
+    const messageId = m.body.data && m.body.data.id;
+
+    // create a new notification
+    const createRes = await request(app)
+      .post('/api/notifications')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ user_id: userId, mensagem_id: messageId, acao: 'NOTIFICACAO', detalhes: 'Test count' });
+
+    expect(createRes.status).toBe(201);
+    expect(createRes.body.success).toBe(true);
+>>>>>>> origin/main
 
     const after = await request(app).get('/api/notifications/count').set('Authorization', `Bearer ${authToken}`);
     expect(after.status).toBe(200);
@@ -47,6 +70,7 @@ describe('Notifications API', () => {
     expect(typeof after.body.data.count).toBe('number');
     expect(after.body.data.count).toBeGreaterThanOrEqual(before.body.data.count);
   });
+<<<<<<< HEAD
 
   test('DELETE /api/notifications/:id - delete notification', async () => {
     // create a notification
@@ -72,4 +96,6 @@ describe('Notifications API', () => {
     const ids = (list2.body.data || []).map(n => n.id);
     expect(ids).not.toContain(idToDelete);
   });
+=======
+>>>>>>> origin/main
 });
