@@ -152,9 +152,25 @@ export default function MessagesScreen({ user }) {
       const result = await messageService.create(payload);
       if (result && result.success) {
         Alert.alert('Sucesso', 'Mensagem criada com sucesso');
+
+        // Optimistic insert into sent messages list when id available
+        const createdId = result.data?.id;
+        if (createdId) {
+          const newMsg = {
+            id: createdId,
+            title: newTitle,
+            content: newContent,
+            location_name: newLocationName || (inlineType === 'GPS' ? `${latitude},${longitude}` : (ssids.filter(Boolean).join(', ') || 'Local')),
+            policy_type: policyType.toLowerCase(),
+            created_at: new Date().toISOString(),
+            received_count: 0
+          };
+          setMessages(prev => [newMsg, ...prev]);
+        }
+
         setShowCreateModal(false);
         // reset form
-        setNewTitle(''); setNewContent(''); setSsids(['']); setLatitude(''); setLongitude(''); setRadiusM('500');
+        setNewTitle(''); setNewContent(''); setSsids(['']); setLatitude(''); setLongitude(''); setRadiusM('500'); setNewLocationName(''); setPolicyRules([{ chave: '', valor: '' }]);
         // refresh sent messages
         setActiveTab('sent');
         await loadMessages();
