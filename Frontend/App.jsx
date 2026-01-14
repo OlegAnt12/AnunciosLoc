@@ -4,9 +4,12 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { View, TouchableOpacity, Text, Alert, useColorScheme } from 'react-native';
+import { useNotifications } from './src/contexts/NotificationsContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { NotificationsProvider, useNotifications } from './src/contexts/NotificationsContext';
+import NotificationsScreen from './src/components/Main/NotificationsScreen';
 
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -123,6 +126,27 @@ function MainTabs({ setShowCreateAd, isDarkMode }) {
       >
         {(props) => <MessagesScreen {...props} />}
       </Tab.Screen>
+
+      <Tab.Screen 
+        name="Notificações" 
+        options={{
+          tabBarIcon: ({ color, size, focused }) => {
+            const { count } = useNotifications();
+            return (
+              <View style={{ width: 36, alignItems: 'center' }}>
+                <Icon name={focused ? 'bell' : 'bell-outline'} size={size} color={color} />
+                {count > 0 && (
+                  <View style={{ position: 'absolute', right: -6, top: -4, backgroundColor: '#FF6B35', minWidth: 20, paddingHorizontal: 6, borderRadius: 10, height: 20, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ color: '#fff', fontSize: 10, fontWeight: '600' }}>{count > 99 ? '99+' : String(count)}</Text>
+                  </View>
+                )}
+              </View>
+            );
+          }
+        }}
+      >
+        {(props) => <NotificationsScreen {...props} />}
+      </Tab.Screen>
       
       <Tab.Screen 
         name="Perfil" 
@@ -162,7 +186,9 @@ function AppNavigator({ isDarkMode, toggleTheme }) {
   return (
     <NavigationContainer theme={CustomLightTheme}>
       {isAuthenticated ? (
-        <MainTabs isDarkMode={isDarkMode} />
+        <NotificationsProvider>
+          <MainTabs isDarkMode={isDarkMode} />
+        </NotificationsProvider>
       ) : (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login">
