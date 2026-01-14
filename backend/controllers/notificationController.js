@@ -22,23 +22,39 @@ const notificationController = {
 
   async createNotification(req, res) {
     try {
-      const { user_id, mensagem_id, acao = 'NOTIFICACAO', detalhes = '' } = req.body;
+      const { user_id, mensagem_id = null, acao = 'NOTIFICACAO', detalhes = '' } = req.body;
 
-      if (!user_id || !mensagem_id) return res.status(400).json({ success: false, message: 'user_id e mensagem_id são obrigatórios' });
+      const targetUser = user_id || req.userId;
 
-      await require('../config/database').execute(
+      const [result] = await require('../config/database').execute(
         'INSERT INTO logs_mensagens (mensagem_id, acao, utilizador_id, detalhes) VALUES (?, ?, ?, ?)',
-        [mensagem_id, acao, user_id, detalhes]
+        [mensagem_id, acao, targetUser, detalhes]
       );
 
-      res.status(201).json({ success: true, message: 'Notificação criada' });
+      res.status(201).json({ success: true, message: 'Notificação criada', data: { id: result.insertId } });
     } catch (error) {
       res.status(500).json({ success: false, message: 'Erro ao criar notificação' });
     }
   },
 
   async deleteNotification(req, res) {
-    res.status(501).json({ success: false, message: 'Notificação - remoção não implementada' });
+    try {
+      const id = parseInt(req.params.id, 10);
+      const ok = await notificationService.deleteNotification(req.userId, id);
+      if (!ok) return res.status(404).json({ success: false, message: 'Notificação não encontrada' });
+      res.json({ success: true, message: 'Notificação removida' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Erro ao remover notificação' });
+    }
+  },
+
+  async getCount(req, res) {
+    try {
+      const count = await notificationService.getUnreadNotificationCount(req.userId);
+      res.json({ success: true, data: { count } });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Erro ao obter contador de notificações' });
+    }
   }
 };
 

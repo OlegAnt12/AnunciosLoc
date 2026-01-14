@@ -34,7 +34,7 @@ class NotificationService {
   }
 
   async getUserNotifications(userId, limit = 50) {
-    const notifications = await db.query(`
+    const [notifications] = await db.query(`
       SELECT 
         lm.id,
         lm.mensagem_id,
@@ -84,6 +84,15 @@ class NotificationService {
         [userId, userId]
       );
     }
+  }
+
+  async deleteNotification(userId, logId) {
+    const [result] = await db.query(
+      'DELETE FROM logs_mensagens WHERE id = ? AND utilizador_id = ?',
+      [logId, userId]
+    );
+
+    return result.affectedRows > 0;
   }
 }
 
