@@ -449,7 +449,7 @@ class MessageService {
   }
 
   async checkForExpiredMessages() {
-    const result = await db.query(
+    const [result] = await db.query(
       'UPDATE mensagens SET ativa = FALSE WHERE data_fim < NOW() AND ativa = TRUE'
     );
     

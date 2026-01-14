@@ -41,7 +41,7 @@ class DeviceService {
   }
 
   async getUserDevices(userId) {
-    const devices = await db.query(`
+    const [devices] = await db.query(`
       SELECT 
         d.*,
         cd.tipo_conexao,
@@ -64,7 +64,7 @@ class DeviceService {
   }
 
   async cleanupInactiveDevices() {
-    const result = await db.query(
+    const [result] = await db.query(
       'UPDATE dispositivos SET ativo = FALSE WHERE data_ultimo_acesso < DATE_SUB(NOW(), INTERVAL 30 DAY) AND ativo = TRUE'
     );
     

@@ -90,7 +90,7 @@ class LocationService {
 
     query += ' GROUP BY l.id ORDER BY l.nome';
 
-    const locations = await db.query(query, params);
+    const [locations] = await db.query(query, params);
 
     // Buscar coordenadas para cada local
     const locationsWithCoords = await Promise.all(
@@ -98,13 +98,13 @@ class LocationService {
         let coordenadas = null;
 
         if (location.tipo_coordenada === 'GPS') {
-          const gpsCoords = await db.query(
+          const [gpsCoords] = await db.query(
             'SELECT latitude, longitude, raio_metros FROM coordenadas_gps WHERE local_id = ?',
             [location.id]
           );
           coordenadas = gpsCoords[0] || null;
         } else if (location.tipo_coordenada === 'WIFI') {
-          const wifiCoords = await db.query(
+          const [wifiCoords] = await db.query(
             'SELECT ssid, descricao FROM ssids_wifi WHERE local_id = ?',
             [location.id]
           );
@@ -139,7 +139,7 @@ class LocationService {
 
     // Verificar locais por GPS
     if (latitude && longitude) {
-      const gpsLocations = await db.query(
+      const [gpsLocations] = await db.query(
         `SELECT l.id, l.nome, 'GPS' as tipo, cg.raio_metros,
                 calcular_distancia_km(?, ?, cg.latitude, cg.longitude) as distancia
          FROM locais l
@@ -154,7 +154,7 @@ class LocationService {
     // Verificar locais por WiFi
     if (ssids.length > 0) {
       const ssidsString = ssids.join(',');
-      const wifiLocations = await db.query(
+      const [wifiLocations] = await db.query(
         `SELECT DISTINCT l.id, l.nome, 'WIFI' as tipo, NULL as distancia
          FROM locais l
          JOIN ssids_wifi sw ON l.id = sw.local_id
@@ -189,7 +189,7 @@ class LocationService {
     return await db.transaction(async (connection) => {
       // Verificar se o local pertence ao utilizador
       const [locations] = await connection.execute(
-        'SELECT criador_id FROM locais WHERE id = ?',
+        'SELECT criador_id, tipo_coordenada_id FROM locais WHERE id = ?',
         [locationId]
       );
 
@@ -214,8 +214,68 @@ class LocationService {
     });
   }
 
+  async updateLocation(locationId, updateData, userId) {
+    return await db.transaction(async (connection) => {
+      const [locations] = await connection.execute(
+        'SELECT criador_id, tipo_coordenada_id FROM locais WHERE id = ?',
+        [locationId]
+      );
+
+      if (locations.length === 0) {
+        throw new Error('Local não encontrado');
+      }
+
+      if (locations[0].criador_id !== userId) {
+        throw new Error('Apenas o criador pode atualizar o local');
+      }
+
+      const fields = [];
+      const params = [];
+
+      if (updateData.nome) {
+        fields.push('nome = ?');
+        params.push(updateData.nome);
+      }
+
+      if (updateData.descricao) {
+        fields.push('descricao = ?');
+        params.push(updateData.descricao);
+      }
+
+      if (fields.length > 0) {
+        params.push(locationId);
+        await connection.execute(
+          `UPDATE locais SET ${fields.join(', ')} WHERE id = ?`,
+          params
+        );
+      }
+
+      // Atualizar coordenadas se fornecidas
+      if (updateData.tipo === 'GPS' && updateData.coordenadas) {
+        const { latitude, longitude, raio_metros } = updateData.coordenadas;
+        await connection.execute('DELETE FROM coordenadas_gps WHERE local_id = ?', [locationId]);
+        await connection.execute(
+          'INSERT INTO coordenadas_gps (local_id, latitude, longitude, raio_metros) VALUES (?, ?, ?, ?)',
+          [locationId, latitude, longitude, raio_metros]
+        );
+      } else if (updateData.tipo === 'WIFI' && Array.isArray(updateData.coordenadas)) {
+        await connection.execute('DELETE FROM ssids_wifi WHERE local_id = ?', [locationId]);
+        for (const ssid of updateData.coordenadas) {
+          if (ssid && ssid.trim()) {
+            await connection.execute('INSERT INTO ssids_wifi (local_id, ssid) VALUES (?, ?)', [locationId, ssid.trim()]);
+          }
+        }
+      }
+
+      // Invalidar cache
+      await cacheService.delete('locations:all');
+
+      return true;
+    });
+  }
+
   async getLocationStats(locationId) {
-    const stats = await db.query(`
+    const [rows] = await db.query(`
       SELECT 
         l.id,
         l.nome,
@@ -230,7 +290,7 @@ class LocationService {
       GROUP BY l.id, l.nome
     `, [locationId]);
 
-    return stats[0] || null;
+    return rows[0] || null;
   }
 }
 

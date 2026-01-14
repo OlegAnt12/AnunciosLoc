@@ -144,7 +144,7 @@ class AuthService {
   }
 
   async cleanupExpiredSessions() {
-    const result = await db.query(
+    const [result] = await db.query(
       'UPDATE sessoes SET ativa = FALSE WHERE data_expiracao <= NOW() AND ativa = TRUE'
     );
     
