@@ -6,6 +6,10 @@ import {
   TouchableOpacity,
   Alert,
   RefreshControl,
+  Modal,
+  TextInput,
+  Button,
+  StyleSheet
 } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { messageService } from '../../../services/api';
@@ -14,6 +18,19 @@ export default function MessagesScreen({ user }) {
   const [activeTab, setActiveTab] = useState('sent');
   const [messages, setMessages] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Create message form state
+  const [newTitle, setNewTitle] = useState('');
+  const [newContent, setNewContent] = useState('');
+  const [deliveryMode, setDeliveryMode] = useState('CENTRALIZADO');
+  const [policyType, setPolicyType] = useState('WHITELIST');
+  const [inlineType, setInlineType] = useState('GPS'); // GPS or WIFI
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [radiusM, setRadiusM] = useState('500');
+  const [ssids, setSsids] = useState(['']);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     loadMessages();
@@ -64,6 +81,66 @@ export default function MessagesScreen({ user }) {
     setRefreshing(true);
     await loadMessages();
     setRefreshing(false);
+  };
+
+  const addSsid = () => setSsids([...ssids, '']);
+  const updateSsid = (index, value) => {
+    const newArr = [...ssids];
+    newArr[index] = value;
+    setSsids(newArr);
+  };
+  const removeSsid = (index) => {
+    const newArr = ssids.filter((_, i) => i !== index);
+    setSsids(newArr.length ? newArr : ['']);
+  };
+
+  const submitCreate = async () => {
+    // basic validation
+    if (!newTitle.trim() || !newContent.trim()) {
+      Alert.alert('Erro', 'Preencha o título e o conteúdo');
+      return;
+    }
+
+    const payload = {
+      titulo: newTitle,
+      conteudo: newContent,
+      modo_entrega: deliveryMode,
+      tipo_politica: policyType,
+    };
+
+    // attach inline location data if provided
+    if (inlineType === 'GPS' && latitude && longitude) {
+      payload.latitude = parseFloat(latitude);
+      payload.longitude = parseFloat(longitude);
+      payload.raio_metros = parseInt(radiusM, 10) || 500;
+      payload.tipo_local = 'GPS';
+    } else if (inlineType === 'WIFI') {
+      // filter empty ssids
+      const filtered = ssids.map(s => s && s.trim()).filter(Boolean);
+      if (filtered.length > 0) payload.coordenadas = filtered;
+      payload.tipo_local = 'WIFI';
+    }
+
+    try {
+      setCreating(true);
+      const result = await messageService.create(payload);
+      if (result && result.success) {
+        Alert.alert('Sucesso', 'Mensagem criada com sucesso');
+        setShowCreateModal(false);
+        // reset form
+        setNewTitle(''); setNewContent(''); setSsids(['']); setLatitude(''); setLongitude(''); setRadiusM('500');
+        // refresh sent messages
+        setActiveTab('sent');
+        await loadMessages();
+      } else {
+        throw new Error(result?.message || 'Erro ao criar mensagem');
+      }
+    } catch (error) {
+      console.error('Erro ao criar mensagem:', error);
+      Alert.alert('Erro', error.message || 'Falha ao criar mensagem');
+    } finally {
+      setCreating(false);
+    }
   };
 
   const deleteMessage = async (messageId) => {
@@ -162,6 +239,12 @@ export default function MessagesScreen({ user }) {
           <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#2D3436', marginBottom: 16 }}>
             {activeTab === 'sent' ? 'Minhas Mensagens' : 'Mensagens Recebidas'}
           </Text>
+
+          {activeTab === 'sent' && (
+            <TouchableOpacity onPress={() => setShowCreateModal(true)} style={{ backgroundColor: '#FF6B35', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, alignSelf: 'flex-start' }}>
+              <Text style={{ color: '#FFF', fontWeight: '600' }}>Criar Mensagem</Text>
+            </TouchableOpacity>
+          )}
           
           {messages.length === 0 ? (
             <View style={{ alignItems: 'center', padding: 20 }}>
@@ -225,6 +308,63 @@ export default function MessagesScreen({ user }) {
           )}
         </View>
       </ScrollView>
+
+      {/* Create Message Modal */}
+      <Modal visible={showCreateModal} animationType="slide" onRequestClose={() => setShowCreateModal(false)}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Criar Mensagem</Text>
+
+          <TextInput placeholder="Título" value={newTitle} onChangeText={setNewTitle} style={styles.input} />
+          <TextInput placeholder="Conteúdo" value={newContent} onChangeText={setNewContent} style={[styles.input, { height: 120 }]} multiline />
+
+          <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+            <TouchableOpacity onPress={() => setInlineType('GPS')} style={[styles.smallButton, inlineType === 'GPS' ? styles.smallButtonActive : null]}>
+              <Text style={inlineType === 'GPS' ? styles.smallButtonTextActive : styles.smallButtonText}>GPS</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setInlineType('WIFI')} style={[styles.smallButton, inlineType === 'WIFI' ? styles.smallButtonActive : null]}>
+              <Text style={inlineType === 'WIFI' ? styles.smallButtonTextActive : styles.smallButtonText}>WIFI (SSIDs)</Text>
+            </TouchableOpacity>
+          </View>
+
+          {inlineType === 'GPS' ? (
+            <>
+              <TextInput placeholder="Latitude" value={latitude} onChangeText={setLatitude} keyboardType="numeric" style={styles.input} />
+              <TextInput placeholder="Longitude" value={longitude} onChangeText={setLongitude} keyboardType="numeric" style={styles.input} />
+              <TextInput placeholder="Raio (m)" value={radiusM} onChangeText={setRadiusM} keyboardType="numeric" style={styles.input} />
+            </>
+          ) : (
+            <View style={{ width: '100%' }}>
+              {ssids.map((s, idx) => (
+                <View key={`ssid-${idx}`} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                  <TextInput placeholder={`SSID ${idx + 1}`} value={s} onChangeText={(v) => updateSsid(idx, v)} style={[styles.input, { flex: 1 }]} />
+                  <TouchableOpacity onPress={() => removeSsid(idx)} style={{ marginLeft: 8 }}>
+                    <Icon name="close-circle" size={24} color="#E17055" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              <TouchableOpacity onPress={addSsid} style={{ marginTop: 8, alignSelf: 'flex-start' }}>
+                <Text style={{ color: '#FF6B35', fontWeight: '600' }}>+ Adicionar SSID</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <View style={{ flexDirection: 'row', marginTop: 12 }}>
+            <Button title="Cancelar" onPress={() => setShowCreateModal(false)} />
+            <View style={{ width: 12 }} />
+            <Button title={creating ? 'Criando...' : 'Criar'} onPress={submitCreate} disabled={creating} />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  modalContainer: { flex: 1, padding: 20, backgroundColor: '#FFF' },
+  modalTitle: { fontSize: 20, fontWeight: '700', marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: '#EDEDED', borderRadius: 8, padding: 12, marginBottom: 8 },
+  smallButton: { padding: 8, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: '#E6E6E6', marginRight: 8 },
+  smallButtonActive: { backgroundColor: '#FF6B35', borderColor: '#FF6B35' },
+  smallButtonText: { color: '#2D3436' },
+  smallButtonTextActive: { color: '#FFF' }
+});
