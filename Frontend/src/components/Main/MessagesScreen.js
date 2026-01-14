@@ -143,6 +143,11 @@ export default function MessagesScreen({ user }) {
     }
 
     try {
+      // provide alternative field names for broader compatibility
+      if (payload.restricoes && !payload.policy_rules) payload.policy_rules = payload.restricoes;
+      if (payload.modo_entrega && !payload.delivery_mode) payload.delivery_mode = payload.modo_entrega;
+      if (payload.tipo_politica && !payload.policy_type) payload.policy_type = payload.tipo_politica;
+
       setCreating(true);
       const result = await messageService.create(payload);
       if (result && result.success) {
