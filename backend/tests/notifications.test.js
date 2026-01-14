@@ -10,7 +10,10 @@ beforeAll(async () => {
   userId = r.body.data.id;
 });
 
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/main
 afterAll(async () => {
   if (global.__dbEnd) await global.__dbEnd();
 });
@@ -35,6 +38,14 @@ describe('Notifications API', () => {
     expect(before.body.success).toBe(true);
     expect(typeof before.body.data.count).toBe('number');
 
+<<<<<<< HEAD
+    const createRes = await request(app)
+      .post('/api/notifications')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ user_id: userId, mensagem_id: 0, acao: 'NOTIFICACAO', detalhes: 'Test count' });
+
+    expect(createRes.status).toBe(201);
+=======
     // create a test message to attach notification
     const m = await request(app)
       .post('/api/messages')
@@ -51,6 +62,7 @@ describe('Notifications API', () => {
 
     expect(createRes.status).toBe(201);
     expect(createRes.body.success).toBe(true);
+>>>>>>> origin/main
 
     const after = await request(app).get('/api/notifications/count').set('Authorization', `Bearer ${authToken}`);
     expect(after.status).toBe(200);
@@ -58,4 +70,32 @@ describe('Notifications API', () => {
     expect(typeof after.body.data.count).toBe('number');
     expect(after.body.data.count).toBeGreaterThanOrEqual(before.body.data.count);
   });
+<<<<<<< HEAD
+
+  test('DELETE /api/notifications/:id - delete notification', async () => {
+    // create a notification
+    const createRes = await request(app)
+      .post('/api/notifications')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ user_id: userId, mensagem_id: 0, acao: 'NOTIFICACAO', detalhes: 'To delete' });
+
+    expect(createRes.status).toBe(201);
+
+    // fetch notifications and delete the newest
+    const list = await request(app).get('/api/notifications').set('Authorization', `Bearer ${authToken}`);
+    expect(list.status).toBe(200);
+    const idToDelete = list.body.data && list.body.data[0] && list.body.data[0].id;
+    expect(idToDelete).toBeTruthy();
+
+    const del = await request(app).delete(`/api/notifications/${idToDelete}`).set('Authorization', `Bearer ${authToken}`);
+    expect(del.status).toBe(200);
+    expect(del.body.success).toBe(true);
+
+    // ensure it's removed
+    const list2 = await request(app).get('/api/notifications').set('Authorization', `Bearer ${authToken}`);
+    const ids = (list2.body.data || []).map(n => n.id);
+    expect(ids).not.toContain(idToDelete);
+  });
+=======
+>>>>>>> origin/main
 });

@@ -44,7 +44,18 @@ const locationController = {
   },
 
   async updateLocation(req, res) {
+<<<<<<< HEAD
+    try {
+      const id = parseInt(req.params.id, 10);
+      const data = req.body;
+      await locationService.updateLocation(id, req.userId, data);
+      res.json({ success: true, message: 'Localização atualizada' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message || 'Erro ao atualizar localização' });
+    }
+=======
     res.status(501).json({ success: false, message: 'Atualizar localização não implementado nesta versão' });
+>>>>>>> origin/main
   },
 
   async deleteLocation(req, res) {
