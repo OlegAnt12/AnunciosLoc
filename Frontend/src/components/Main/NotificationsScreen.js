@@ -12,12 +12,11 @@ export default function NotificationsScreen() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await notificationService.getNotifications(50);
-      const data = res.data || [];
-      setItems(data);
+      const data = await notificationService.getNotifications(50);
+      setItems(data || []);
       // Use the unread count endpoint for accurate badge
       const cntRes = await notificationService.getCount();
-      setCount(cntRes.data?.count || 0);
+      setCount(cntRes?.count || 0);
     } catch (err) {
       console.log('Erro ao obter notificações', err);
     } finally {

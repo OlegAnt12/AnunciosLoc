@@ -217,20 +217,21 @@ export default function LocationsScreen({ user }) {
     }
 
     try {
-      const locationData = {
-        name: newLocation.name.trim(),
-        type: newLocation.type,
-        latitude: newLocation.latitude,
-        longitude: newLocation.longitude,
-        radius: newLocation.radius,
-        wifi_ssid: newLocation.wifi_ssid,
-        created_by: user.id
+      // Map frontend fields to backend expected shape
+      const payload = {
+        nome: newLocation.name.trim(),
+        descricao: '',
+        tipo: (newLocation.type === 'wifi' ? 'WIFI' : 'GPS'),
+        coordenadas: newLocation.type === 'wifi'
+          ? (newLocation.wifi_ssid ? [newLocation.wifi_ssid] : [])
+          : { latitude: newLocation.latitude, longitude: newLocation.longitude, raio_metros: newLocation.radius }
       };
 
-      const result = await locationService.create(locationData);
+      const result = await locationService.create(payload);
       
       if (result.success) {
-        setLocations(prev => [...prev, result.data]);
+        // Refresh full list to get consistent structure from backend
+        await loadLocations();
         setShowAddModal(false);
         resetNewLocation();
         Alert.alert('Sucesso', 'Local adicionado com sucesso!');

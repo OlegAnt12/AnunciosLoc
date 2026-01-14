@@ -232,7 +232,8 @@ export const locationService = {
 
   async getUserLocations(userId) {
     try {
-      const response = await api.get(`/users/${userId}/locations`);
+      // Backend exposes locations via /api/locations with filters
+      const response = await api.get(`/locations?criador_id=${userId}`);
       return response.data;
     } catch (error) {
       throw {

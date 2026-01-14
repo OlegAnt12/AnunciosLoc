@@ -3,12 +3,14 @@ import api from './api';
 const notificationService = {
   async getNotifications(limit = 50) {
     const response = await api.get(`/notifications?limit=${limit}`);
-    return response.data;
+    // normalize to return the inner data array
+    return response.data.data;
   },
 
   async getCount() {
     const response = await api.get('/notifications/count');
-    return response.data;
+    // normalize to return inner { count }
+    return response.data.data;
   },
 
   async createNotification(payload) {
