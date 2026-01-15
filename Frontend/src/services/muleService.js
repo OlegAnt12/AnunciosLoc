@@ -59,6 +59,18 @@ export const muleService = {
         details: error.response?.data,
       };
     }
+  },
+
+  async getStats() {
+    try {
+      const response = await api.get('/mules/stats');
+      return response.data;
+    } catch (error) {
+      throw {
+        message: error.userMessage || 'Erro ao obter estatísticas',
+        details: error.response?.data,
+      };
+    }
   }
 };
 

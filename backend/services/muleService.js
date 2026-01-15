@@ -87,6 +87,21 @@ class MuleService {
     const [result] = await db.execute('DELETE FROM config_mulas WHERE utilizador_id = ?', [mulaUserId]);
     return result.affectedRows > 0;
   }
+
+  // Get mule statistics
+  async getMuleStats(mulaUserId) {
+    const [rows] = await db.query(`
+      SELECT 
+        COUNT(*) as total_assignments,
+        SUM(CASE WHEN entregue = TRUE THEN 1 ELSE 0 END) as delivered,
+        SUM(CASE WHEN entregue = FALSE THEN 1 ELSE 0 END) as pending,
+        AVG(TIMESTAMPDIFF(MINUTE, data_atribuicao, data_entrega)) as avg_delivery_time_minutes
+      FROM mulas_mensagens
+      WHERE mula_utilizador_id = ?
+    `, [mulaUserId]);
+
+    return rows[0] || { total_assignments: 0, delivered: 0, pending: 0, avg_delivery_time_minutes: null };
+  }
 }
 
 module.exports = new MuleService();

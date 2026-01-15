@@ -18,4 +18,7 @@ router.post('/config', protect, muleController.upsertConfig);
 // DELETE /api/mules/config - remove mule configuration
 router.delete('/config', protect, muleController.removeConfig);
 
+// GET /api/mules/stats - get mule statistics (total assignments, delivered, pending)
+router.get('/stats', protect, muleController.getStats);
+
 module.exports = router;

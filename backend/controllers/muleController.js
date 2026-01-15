@@ -57,6 +57,17 @@ const muleController = {
       console.error('Error removing mule config:', error);
       res.status(500).json({ success: false, message: 'Erro ao remover configuração' });
     }
+  },
+
+  async getStats(req, res) {
+    try {
+      const userId = req.userId;
+      const stats = await muleService.getMuleStats(userId);
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      console.error('Error getting mule stats:', error);
+      res.status(500).json({ success: false, message: 'Erro ao obter estatísticas' });
+    }
   }
 };
 
