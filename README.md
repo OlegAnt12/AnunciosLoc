@@ -48,9 +48,10 @@ make test-backend    # Executar testes do backend
   - Seletor de tipo de política (Lista Branca/Lista Negra/Pública)
   - Editor de regras de política (pares chave-valor)
   - Listar enviadas, recebidas e mensagens próximas
-  - Receber mensagens próximas
+  - Integração com fila offline para sincronização automática
 - **Tela de Mules**: Listar atribuições, aceitar & retransmitir, configurar capacidade
 - **Tela de Notificações**: Visualizar, marcar como lida (tudo/item individual), excluir
+- **Componentes P2P**: BLEComponent, WiFiP2PComponent, MeshNetworkingComponent para comunicação direta
 
 ---
 
@@ -230,19 +231,21 @@ Wi-Fi Direct é um padrão peer-to-peer permitindo que dispositivos conectem dir
 - [x] Configuração mule & aceitação de atribuição
 - [x] Persistência offline (AsyncStorage para auth/config)
 
-### 🔄 Fase Intermediária (Parcial - Em Andamento)
+### 🔄 Fase Intermediária (95% Concluída)
 - [x] Roteamento de mensagem descentralizada via mules
 - [x] Filtragem baseada em política (lista branca/lista negra/pública)
 - [x] Polling de notificação & badge
-- [ ] **TODO**: Fila de mensagem offline (quando mule está offline, fila para nova tentativa)
-- [ ] **TODO**: Agendamento de prioridade mule (mensagens de alta prioridade primeiro)
+- [x] **DONE**: Fila de mensagem offline (quando offline, fila para nova tentativa)
+- [x] **DONE**: Integração BLE para mesh networking
+- [x] **DONE**: Componente Wi-Fi P2P para comunicação direta
+- [x] **DONE**: Serviço de retransmissão multi-hop
 - [ ] **TODO**: Criptografia de mensagem para políticas sensíveis
 - [ ] **TODO**: Logs de auditoria para conformidade
 
-### 🚀 Fase Final (Não Iniciada)
-- [ ] Retransmissão multi-hop (mensagem passa por 2+ mules)
-- [ ] Rede mesh (mesh dinâmico sem servidor central)
-- [ ] P2P avançado (BLE, Bluetooth, Wi-Fi Direct nativo)
+### 🚀 Fase Final (30% Concluída)
+- [x] Retransmissão multi-hop (mensagem passa por 2+ mules)
+- [x] Rede mesh (mesh dinâmico via BLE)
+- [x] P2P avançado (BLE, Wi-Fi Direct)
 - [ ] Painel de análise (estatísticas de entrega de mensagem, saúde da rede)
 - [ ] Criptografia ponta-a-ponta (troca de chave RSA)
 - [ ] Assinaturas digitais para autenticidade de mensagem

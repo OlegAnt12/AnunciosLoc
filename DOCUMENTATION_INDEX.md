@@ -64,10 +64,15 @@ Welcome to AnunciosLoc! This document helps you navigate all project documentati
 │   ├── src/
 │   │   ├── components/                 ← UI components
 │   │   │   ├── Auth/                   ← LoginScreen, RegisterScreen
-│   │   │   └── Main/                   ← HomeScreen, MessagesScreen, etc.
+│   │   │   ├── Main/                   ← HomeScreen, MessagesScreen, etc.
+│   │   │   ├── BLEComponent.js         ← BLE mesh networking
+│   │   │   ├── WiFiP2PComponent.js     ← Wi-Fi Direct P2P
+│   │   │   └── MeshNetworkingComponent.js ← Mesh network formation
 │   │   ├── contexts/                   ← AuthContext, NotificationsContext
 │   │   ├── hooks/                      ← Custom hooks (useApi, useOfflineSync)
 │   │   ├── services/                   ← API wrappers, offline queue
+│   │   │   ├── offlineQueueService.js  ← Offline message queue
+│   │   │   └── relayService.js         ← Multi-hop relay logic
 │   │   ├── styles/                     ← Themes and common styles
 │   │   └── config/                     ← API configuration
 │   └── assets/                         ← Images and media
@@ -92,11 +97,13 @@ Welcome to AnunciosLoc! This document helps you navigate all project documentati
 
 **Status**: PRODUCTION READY
 
-### 🔄 Phase 2: Intermediate (70% Complete)
+### 🔄 Phase 2: Intermediate (95% Complete)
 - [x] **Mule System**: Relay nodes, assignments, acceptance, stats
 - [x] **Offline Queue**: Message/location queueing with auto-retry
 - [x] **Network Monitoring**: NetInfo integration for offline detection
-- [ ] **Wi-Fi Direct P2P**: Architecture documented, library pending
+- [x] **BLE Mesh Networking**: Component implemented for P2P mesh
+- [x] **Wi-Fi Direct P2P**: Component implemented for direct peer communication
+- [x] **Multi-hop Relay**: Service implemented for extended reach
 - [ ] **User Blocking**: Not yet implemented
 - [ ] **Message Encryption**: Not yet implemented
 

@@ -162,3 +162,93 @@ AnunciosLoc permite aos usuários criar e receber mensagens baseadas em localiza
 O projeto AnunciosLoc demonstrou sucesso na implementação de um sistema complexo de mensagens baseado em localização com arquitetura híbrida centralizada/descentralizada. As funcionalidades core estão completas e testadas, com espaço significativo para expansões futuras em comunicação P2P avançada e recursos de segurança.
 
 A arquitetura modular e bem documentada facilita a manutenção e extensão do sistema, posicionando-o bem para futuras iterações e melhorias.
+
+## 2. Desenho da Interface Móvel
+
+### Wireframe da Aplicação
+
+A interface móvel do AnunciosLoc segue um design de navegação por abas inferiores (Bottom Tabs) com as seguintes telas principais:
+
+- **Tela de Login/Registro**: Campos para email, senha e botão de ação. Suporte a persistência de sessão.
+- **Tela de Mensagens**: Lista de mensagens recebidas com filtros por política. Botão flutuante para criar nova mensagem.
+- **Tela de Localizações**: Lista de localizações GPS/Wi-Fi criadas. Mapa integrado para visualização.
+- **Tela de Perfil**: Visualização e edição de dados do usuário, incluindo configurações mule.
+- **Tela de Notificações**: Lista de notificações com badges de contagem não lida.
+
+### Características Específicas do Comportamento
+
+- **Offline Queue**: A aplicação detecta conectividade e enfileira mensagens offline, sincronizando automaticamente quando online.
+- **P2P Discovery**: Componentes BLE e Wi-Fi Direct escaneiam dispositivos próximos para comunicação direta.
+- **Mesh Networking**: Rede mesh via BLE para roteamento multi-hop, com descoberta automática de nós.
+- **Adaptive UI**: Feedback visual para estados de conectividade e progresso de operações assíncronas.
+
+## 3. Arquitectura Básica
+
+### 3.1 Estruturas de Dados Mantidas pelo Servidor e pelo Cliente
+
+**Servidor (Backend)**:
+- Tabelas MySQL: Users, Profiles, Locations, Messages, Notifications, Devices, Sessions, etc.
+- Estruturas em memória: Cache de sessões JWT, filas de mensagens pendentes.
+
+**Cliente (Frontend)**:
+- AsyncStorage: Tokens JWT, dados offline (mensagens, localizações).
+- Context API: Estado global para usuário autenticado, conectividade, filas offline.
+
+### 3.2 Descrição dos Protocolos Cliente / Servidor
+
+- **Protocolo HTTP/REST**: Comunicação via Axios com endpoints RESTful (GET/POST/PUT/DELETE).
+- **Autenticação JWT**: Tokens enviados em headers Authorization.
+- **Polling para Notificações**: Cliente consulta periodicamente o servidor para novas notificações.
+- **WebSocket (planejado)**: Para notificações push em tempo real.
+
+### 3.3 Descrição do Protocolo P2P para Entrega de Mensagem em Modo Descentralizado
+
+- **BLE Mesh**: Descoberta de dispositivos via react-native-ble-plx, formação de rede mesh com roteamento multi-hop.
+- **Wi-Fi Direct**: Conexão peer-to-peer via react-native-wifi-p2p para transferência direta de mensagens.
+- **Relay Service**: Algoritmo de roteamento baseado em proximidade geográfica e confiança de dispositivos mule.
+
+### 3.4 Outros Recursos de Projecto relevantes
+
+- **Offline-First**: Estratégia de desenvolvimento com persistência local e sincronização.
+- **Modular Services**: Separação de responsabilidades em serviços (auth, message, location, etc.).
+
+## 4. Funcionalidades avançadas
+
+### 4.1 Segurança
+
+**Objetivos**: Autenticação segura, integridade de mensagens, privacidade de localização.
+
+**Protocolos**:
+- JWT para autenticação.
+- Validação de entrada no backend.
+- Rate limiting para prevenir abuso.
+- (Planejado: Criptografia ponta-a-ponta com chaves públicas).
+
+### 4.2 Roteamento de retransmissão
+
+- **Algoritmo**: Roteamento baseado em localização GPS e SSID Wi-Fi.
+- **Mules**: Dispositivos designados para retransmissão, com capacidade configurável.
+- **Multi-hop**: Extensão via mesh BLE para alcance além da linha de visão.
+
+## 5. Implementação
+
+- **Sockets e Comunicações**: Axios para HTTP, react-native-ble-plx e react-native-wifi-p2p para P2P.
+- **Eventos GPS**: react-native-geolocation para obtenção de coordenadas.
+- **Estado Persistente**: AsyncStorage para dados locais, MySQL no servidor.
+- **Linguagem/Plataforma**: Backend em Node.js/Express, Frontend em React Native/Expo.
+- **Bibliotecas Externas**: react-native-ble-plx, react-native-wifi-p2p, axios, async-storage.
+- **Componentes Android**: Activities para telas, Services para background (BLE, GPS).
+- **Threads**: Thread principal para UI, threads background para P2P e sincronização.
+- **Otimizações**: Cache de localizações, debouncing de eventos GPS.
+
+## 6. Limitações
+
+- Falta de testes automatizados completos.
+- Dependência de bibliotecas P2P que requerem instalação manual.
+- Polling ao invés de push notifications.
+- Limitações de bateria em operações P2P contínuas.
+- Ambiente de teste limitado a emuladores/simuladores.
+
+## 7. Conclusões
+
+O AnunciosLoc representa uma implementação robusta de sistema de mensagens geo-localizado com capacidades P2P. As funcionalidades core estão operacionais, com potencial para expansão em segurança e escalabilidade. A arquitetura híbrida permite flexibilidade entre modos centralizados e descentralizados, atendendo aos requisitos do projeto.

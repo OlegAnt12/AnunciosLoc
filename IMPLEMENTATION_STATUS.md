@@ -94,10 +94,46 @@ AnunciosLoc é uma plataforma de mensagens baseada em localização peer-to-peer
 
 ---
 
-## Fase 2: Recursos Intermediários (🔄 PARCIALMENTE CONCLUÍDO)
+## Fase 2: Recursos Intermediários (✅ 95% CONCLUÍDO)
 
 ### 1. Sistema Mule/P2P Relay
-- **Status**: ✅ 90% Concluído
+- **Status**: ✅ 95% Concluído
+- **Implementado**:
+  - Atribuição de mensagens descentralizadas a mules ativas
+  - Aceitação de atribuições mule com registro de entrega
+  - Retransmissão via Wi-Fi Direct e BLE
+  - Capacidade configurável de mule
+  - Serviço de relay para multi-hop
+- **Arquivos**: muleService.js, relayService.js, MulesScreen.js
+
+### 2. Fila Offline
+- **Status**: ✅ Concluído
+- **Implementado**:
+  - Detecção de conectividade de rede
+  - Armazenamento de mensagens offline em AsyncStorage
+  - Sincronização automática ao reconectar
+  - Listeners de conectividade nas telas de mensagens e localizações
+- **Arquivos**: offlineQueueService.js, MessagesScreen.js, LocationsScreen.js
+
+### 3. Comunicação P2P Avançada
+- **Status**: ✅ Concluído
+- **Implementado**:
+  - Componente BLE para descoberta e conexão mesh
+  - Componente Wi-Fi P2P para peer discovery e messaging
+  - Rede mesh BLE com roteamento multi-hop
+  - Integração com retransmissão mule
+- **Arquivos**: BLEComponent.js, WiFiP2PComponent.js, MeshNetworkingComponent.js
+
+## Fase 3: Recursos Avançados (🔄 30% CONCLUÍDO)
+
+### 1. Segurança e Criptografia
+- **Status**: 🔄 Parcial
+- **Implementado**: Validação JWT, rate limiting
+- **Pendente**: Criptografia ponta-a-ponta, assinaturas digitais
+
+### 2. Análise e Monitoramento
+- **Status**: ❌ Não Iniciado
+- **Pendente**: Painel de admin, estatísticas de entrega
 - **Implementado**:
   - Registro de mule (usuário se torna nó de retransmissão)
   - Gerenciamento de configuração de mule (capacidade, status ativo)
