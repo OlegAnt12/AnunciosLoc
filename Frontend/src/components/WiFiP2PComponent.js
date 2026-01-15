@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, FlatList, Alert, PermissionsAndroid, Platform, TextInput } from 'react-native';
-// import WifiP2P from 'react-native-wifi-p2p'; // Uncomment when library is installed
+// Try to import WiFi P2P libraries
+let WifiP2P = null;
+let WifiP2PReborn = null;
+
+try {
+  WifiP2P = require('react-native-wifi-p2p').default;
+} catch (e) {
+  console.log('react-native-wifi-p2p not available');
+}
+
+try {
+  WifiP2PReborn = require('react-native-wifi-p2p-reborn').default;
+} catch (e) {
+  console.log('react-native-wifi-p2p-reborn not available');
+}
+
 import { useAuth } from '../contexts/AuthContext';
 
 const WiFiP2PComponent = () => {
@@ -10,39 +25,86 @@ const WiFiP2PComponent = () => {
   const [connectedPeer, setConnectedPeer] = useState(null);
   const [receivedMessages, setReceivedMessages] = useState([]);
   const [messageToSend, setMessageToSend] = useState('');
+  const [libraryAvailable, setLibraryAvailable] = useState(null);
+  const [currentLibrary, setCurrentLibrary] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
     initializeWifiP2P();
   }, []);
 
-  const initializeWifiP2P = async () => {
+  const setupEventListeners = (library, libraryName) => {
     try {
-      // Request necessary permissions for Android
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.requestMultiple([
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          PermissionsAndroid.PERMISSIONS.ACCESS_WIFI_STATE,
-          PermissionsAndroid.PERMISSIONS.CHANGE_WIFI_STATE,
-        ]);
+      if (libraryName === 'react-native-wifi-p2p-reborn') {
+        // Event listeners for reborn library
+        library.on('peers', (peers) => {
+          console.log('Peers found (reborn):', peers);
+          setPeers(peers);
+        });
 
-        const allGranted = Object.values(granted).every(
-          permission => permission === PermissionsAndroid.RESULTS.GRANTED
-        );
+        library.on('connection', (device) => {
+          console.log('Connected to device (reborn):', device);
+          setConnected(true);
+          setConnectedPeer(device);
+        });
 
-        if (!allGranted) {
-          Alert.alert('Permissões necessárias', 'Permissões de localização e Wi-Fi são necessárias para Wi-Fi Direct');
-          return;
-        }
+        library.on('disconnection', () => {
+          console.log('Disconnected (reborn)');
+          setConnected(false);
+          setConnectedPeer(null);
+        });
+
+        library.on('message', (message) => {
+          console.log('Message received (reborn):', message);
+          handleReceivedMessage(message);
+        });
+
+      } else if (libraryName === 'react-native-wifi-p2p') {
+        // Event listeners for original library
+        library.onPeersChanged((peers) => {
+          console.log('Peers changed (original):', peers);
+          setPeers(peers);
+        });
+
+        library.onConnectionChanged((info) => {
+          console.log('Connection changed (original):', info);
+          if (info.connected) {
+            setConnected(true);
+            setConnectedPeer(info.device);
+          } else {
+            setConnected(false);
+            setConnectedPeer(null);
+          }
+        });
+
+        library.onMessageReceived((message) => {
+          console.log('Message received (original):', message);
+          handleReceivedMessage(message);
+        });
+      }
+    } catch (error) {
+      console.error('Error setting up event listeners:', error);
+    }
+  };
+
+  const handleReceivedMessage = (message) => {
+    try {
+      let messageData;
+
+      if (typeof message === 'string') {
+        messageData = JSON.parse(message);
+      } else if (message.data) {
+        messageData = typeof message.data === 'string' ? JSON.parse(message.data) : message.data;
+      } else {
+        messageData = message;
       }
 
-      // Initialize Wi-Fi P2P (would use library when installed)
-      // WifiP2P.initialize();
-      // WifiP2P.setDeviceName('AnunciosLoc_Device');
-
-      console.log('Wi-Fi P2P initialized (placeholder)');
+      if (messageData.type === 'p2p_message') {
+        setReceivedMessages(prev => [...prev, messageData]);
+        Alert.alert('Mensagem Recebida', `Nova mensagem de ${messageData.senderUsername}`);
+      }
     } catch (error) {
-      console.error('Error initializing Wi-Fi P2P:', error);
+      console.error('Error handling received message:', error);
     }
   };
 
@@ -51,19 +113,29 @@ const WiFiP2PComponent = () => {
       setIsDiscovering(true);
       setPeers([]);
 
-      // Start peer discovery (would use library when installed)
-      // await WifiP2P.discoverPeers();
+      if (libraryAvailable && currentLibrary) {
+        // Use real library
+        const library = currentLibrary === 'react-native-wifi-p2p-reborn' ? WifiP2PReborn : WifiP2P;
 
-      // Simulate peer discovery for demonstration
-      setTimeout(() => {
-        const mockPeers = [
-          { deviceAddress: 'AA:BB:CC:DD:EE:01', deviceName: 'Device_1', isGroupOwner: false },
-          { deviceAddress: 'AA:BB:CC:DD:EE:02', deviceName: 'Device_2', isGroupOwner: true },
-          { deviceAddress: 'AA:BB:CC:DD:EE:03', deviceName: 'Device_3', isGroupOwner: false },
-        ];
-        setPeers(mockPeers);
-        setIsDiscovering(false);
-      }, 3000);
+        if (currentLibrary === 'react-native-wifi-p2p-reborn') {
+          await library.discoverPeers();
+        } else {
+          await library.startPeerDiscovery();
+        }
+        console.log('Peer discovery started with real library');
+      } else {
+        // Fallback to simulation
+        console.log('Using simulation mode for peer discovery');
+        setTimeout(() => {
+          const mockPeers = [
+            { deviceAddress: 'AA:BB:CC:DD:EE:01', deviceName: 'Device_1', isGroupOwner: false },
+            { deviceAddress: 'AA:BB:CC:DD:EE:02', deviceName: 'Device_2', isGroupOwner: true },
+            { deviceAddress: 'AA:BB:CC:DD:EE:03', deviceName: 'Device_3', isGroupOwner: false },
+          ];
+          setPeers(mockPeers);
+          setIsDiscovering(false);
+        }, 3000);
+      }
 
     } catch (error) {
       console.error('Error starting peer discovery:', error);
@@ -74,8 +146,15 @@ const WiFiP2PComponent = () => {
 
   const stopPeerDiscovery = async () => {
     try {
-      // Stop peer discovery (would use library when installed)
-      // await WifiP2P.stopPeerDiscovery();
+      if (libraryAvailable && currentLibrary) {
+        const library = currentLibrary === 'react-native-wifi-p2p-reborn' ? WifiP2PReborn : WifiP2P;
+
+        if (currentLibrary === 'react-native-wifi-p2p-reborn') {
+          await library.stopPeerDiscovery();
+        } else {
+          await library.stopPeerDiscovery();
+        }
+      }
       setIsDiscovering(false);
       console.log('Peer discovery stopped');
     } catch (error) {
@@ -85,12 +164,21 @@ const WiFiP2PComponent = () => {
 
   const connectToPeer = async (peer) => {
     try {
-      // Connect to peer (would use library when installed)
-      // await WifiP2P.connect(peer.deviceAddress);
+      if (libraryAvailable && currentLibrary) {
+        const library = currentLibrary === 'react-native-wifi-p2p-reborn' ? WifiP2PReborn : WifiP2P;
 
-      Alert.alert('Conectado', `Conectado a ${peer.deviceName}`);
-      setConnected(true);
-      console.log('Connected to peer:', peer);
+        if (currentLibrary === 'react-native-wifi-p2p-reborn') {
+          await library.connect(peer.deviceAddress);
+        } else {
+          await library.connect(peer.deviceAddress);
+        }
+        console.log('Connected to peer with real library');
+      } else {
+        // Simulation mode
+        Alert.alert('Conectado', `Conectado a ${peer.deviceName} (simulação)`);
+        setConnected(true);
+        setConnectedPeer(peer);
+      }
     } catch (error) {
       console.error('Error connecting to peer:', error);
       Alert.alert('Erro', 'Falha ao conectar ao peer');
@@ -99,11 +187,19 @@ const WiFiP2PComponent = () => {
 
   const sendMessageToPeer = async (peer, message) => {
     try {
-      // Send message to peer (would use library when installed)
-      // await WifiP2P.sendMessage(peer.deviceAddress, message);
+      if (libraryAvailable && currentLibrary && connected) {
+        const library = currentLibrary === 'react-native-wifi-p2p-reborn' ? WifiP2PReborn : WifiP2P;
 
-      Alert.alert('Mensagem enviada', `Mensagem enviada para ${peer.deviceName}`);
-      console.log('Message sent to peer:', peer, message);
+        if (currentLibrary === 'react-native-wifi-p2p-reborn') {
+          await library.sendMessage(message);
+        } else {
+          await library.sendMessage(peer.deviceAddress, message);
+        }
+        console.log('Message sent with real library');
+      } else {
+        // Simulation mode
+        Alert.alert('Mensagem enviada', `Mensagem enviada para ${peer.deviceName} (simulação)`);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       Alert.alert('Erro', 'Falha ao enviar mensagem');
@@ -187,6 +283,10 @@ const WiFiP2PComponent = () => {
 
       <Text style={{ marginBottom: 10 }}>
         Status: {connected ? 'Conectado' : 'Desconectado'}
+      </Text>
+
+      <Text style={{ marginBottom: 10, fontSize: 12, color: libraryAvailable ? '#28a745' : '#dc3545' }}>
+        Biblioteca: {libraryAvailable ? `${currentLibrary} (Disponível)` : 'Simulação (Biblioteca não instalada)'}
       </Text>
 
       <Button
@@ -303,7 +403,8 @@ const WiFiP2PComponent = () => {
       )}
 
       <Text style={{ marginTop: 20, fontSize: 12, color: '#666' }}>
-        Nota: Compartilhamento de mensagens P2P via Wi-Fi Direct. Instale 'react-native-wifi-p2p' para funcionalidade completa.
+        Suporte a bibliotecas: react-native-wifi-p2p e react-native-wifi-p2p-reborn.
+        {libraryAvailable ? ' Funcionalidade completa disponível.' : ' Modo simulação ativo - instale uma das bibliotecas para funcionalidade completa.'}
       </Text>
     </View>
   );
