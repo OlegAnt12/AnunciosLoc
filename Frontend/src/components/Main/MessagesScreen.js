@@ -39,7 +39,35 @@ export default function MessagesScreen({ user }) {
 
   useEffect(() => {
     loadMessages();
+
+    // Monitor network connectivity for offline queue retry
+    const unsubscribe = NetInfo.addEventListener(state => {
+      if (state.isConnected) {
+        // Try to retry offline messages when coming back online
+        retryOfflineMessages();
+      }
+    });
+
+    return unsubscribe;
   }, [activeTab]);
+
+  const retryOfflineMessages = async () => {
+    try {
+      const result = await offlineQueueService.retryOfflineMessages(messageService);
+      if (result.successful > 0) {
+        Alert.alert('Offline Sync', `${result.successful} mensagens enviadas com sucesso.`);
+        // Refresh sent messages to show the newly sent ones
+        if (activeTab === 'sent') {
+          await loadMessages();
+        }
+      }
+      if (result.failed > 0) {
+        Alert.alert('Aviso', `${result.failed} mensagens falharam ao enviar. Tente novamente mais tarde.`);
+      }
+    } catch (error) {
+      console.error('Error retrying offline messages:', error);
+    }
+  };
 
   const loadMessages = async () => {
     try {

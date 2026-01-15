@@ -1,252 +1,253 @@
-# AnunciosLoc - Location-Based Messaging & P2P System
+# AnunciosLoc - Sistema de Mensagens Baseado em Localização & P2P
 
-## Project Overview
+## Visão Geral do Projeto
 
-AnunciosLoc is a location-based, decentralized messaging platform enabling:
-- **Centralized & Decentralized messaging** via mule relay nodes
-- **Wi-Fi Direct & GPS-based location matching**
-- **Policy-controlled message delivery** (whitelist, blacklist, public)
-- **Offline support** through mule network infrastructure
+AnunciosLoc é uma plataforma de mensagens descentralizada baseada em localização que permite:
+- **Mensagens Centralizadas & Descentralizadas** via nós de retransmissão mule
+- **Correspondência de localização baseada em Wi-Fi Direct & GPS**
+- **Entrega de mensagens controlada por políticas** (lista branca, lista negra, pública)
+- **Suporte offline** através da infraestrutura de rede mule
 
 ---
 
-## Quick Start (Dev)
+## Início Rápido (Dev)
 
-### Using DevContainer (Recommended)
-1. Open repository in VS Code and select **Reopen in Container**
-2. DevContainer installs dependencies, waits for MySQL, and runs `npm run db:init`
-3. Start Frontend:
-   - In container: `make start-expo` or `cd Frontend && npm run start:lan`
-   - Scan QR code with Expo Go app or use URL for physical devices
+### Usando DevContainer (Recomendado)
+1. Abra o repositório no VS Code e selecione **Reabrir no Contêiner**
+2. O DevContainer instala dependências, aguarda o MySQL e executa `npm run db:init`
+3. Inicie o Frontend:
+   - No contêiner: `make start-expo` ou `cd Frontend && npm run start:lan`
+   - Digitalize o código QR com o app Expo Go ou use a URL para dispositivos físicos
 
-### Using Make (Requires Docker & Docker Compose)
+### Usando Make (Requer Docker & Docker Compose)
 ```bash
-make up              # Start app + MySQL
-make shell-app       # Open shell in app container
-make start-expo      # Start Metro/Expo
-make test-backend    # Run backend tests
+make up              # Iniciar app + MySQL
+make shell-app       # Abrir shell no contêiner do app
+make start-expo      # Iniciar Metro/Expo
+make test-backend    # Executar testes do backend
 ```
 
 ---
 
-## Architecture
+## Arquitetura
 
 ### Backend (Node.js + Express + MySQL)
-- **Authentication**: JWT-based with token persistence
-- **Message Management**: Create, send, receive, delete with policy filtering
-- **Location Matching**: GPS radius + Wi-Fi SSID-based location detection
-- **Mule Relay System**: Assignment, acceptance, retransmission logging
-- **Notifications**: Real-time notification logging to `logs_mensagens`
+- **Autenticação**: Baseada em JWT com persistência de token
+- **Gerenciamento de Mensagens**: Criar, enviar, receber, excluir com filtragem de políticas
+- **Correspondência de Localização**: Raio GPS + detecção de localização baseada em SSID Wi-Fi
+- **Sistema de Retransmissão Mule**: Atribuição, aceitação, registro de retransmissão
+- **Notificações**: Registro de notificações em tempo real para `logs_mensagens`
 
 ### Frontend (Expo / React Native)
-- **Auth Flow**: Login/register with token storage (AsyncStorage)
-- **Profile Management**: Display and edit user profile (display_name, bio)
-- **Locations Screen**: Create (GPS/WIFI), edit, and list user locations
-- **Messages Screen**: 
-  - Create with optional inline GPS/WIFI location
-  - Delivery mode selector (Centralizado/Descentralizado)
-  - Policy type selector (Whitelist/Blacklist/Public)
-  - Policy rules editor (key-value pairs)
-  - List sent, received, and nearby messages
-  - Receive nearby messages
-- **Mules Screen**: List assignments, accept & forward, configure capacity
-- **Notifications Screen**: View, mark as read (all/per-item), delete
+- **Fluxo de Auth**: Login/registro com armazenamento de token (AsyncStorage)
+- **Gerenciamento de Perfil**: Exibir e editar perfil do usuário (display_name, bio)
+- **Tela de Localizações**: Criar (GPS/WIFI), editar e listar localizações do usuário
+- **Tela de Mensagens**:
+  - Criar com localização inline opcional GPS/WIFI
+  - Seletor de modo de entrega (Centralizado/Descentralizado)
+  - Seletor de tipo de política (Lista Branca/Lista Negra/Pública)
+  - Editor de regras de política (pares chave-valor)
+  - Listar enviadas, recebidas e mensagens próximas
+  - Receber mensagens próximas
+- **Tela de Mules**: Listar atribuições, aceitar & retransmitir, configurar capacidade
+- **Tela de Notificações**: Visualizar, marcar como lida (tudo/item individual), excluir
 
 ---
 
-## API Endpoints
+## Endpoints da API
 
-### Authentication (`/api/auth`)
-- `POST /register` - Register new user
-- `POST /login` - Login and receive JWT token
+### Autenticação (`/api/auth`)
+- `POST /register` - Registrar novo usuário
+- `POST /login` - Login e receber token JWT
 
-### Profiles (`/api/profiles`)
-- `GET /me` - Get authenticated user's profile
-- `PUT /me` - Update profile (display_name, bio)
-- `GET /users/:id` - Get user by ID (returns `{ user, profile }`)
+### Perfis (`/api/profiles`)
+- `GET /me` - Obter perfil do usuário autenticado
+- `PUT /me` - Atualizar perfil (display_name, bio)
+- `GET /users/:id` - Obter usuário por ID (retorna `{ user, profile }`)
 
-### Locations (`/api/locations`)
-- `POST /` - Create location (GPS or WIFI with SSIDs)
-- `GET /:id` - Get location details
-- `PUT /:id` - Update location (type, coordinates, SSIDs)
-- `DELETE /:id` - Delete location
-- `GET /users/:id/locations` - List user's locations
+### Localizações (`/api/locations`)
+- `POST /` - Criar localização (GPS ou WIFI com SSIDs)
+- `GET /:id` - Obter detalhes da localização
+- `PUT /:id` - Atualizar localização (tipo, coordenadas, SSIDs)
+- `DELETE /:id` - Excluir localização
+- `GET /users/:id/locations` - Listar localizações do usuário
 
-### Messages (`/api/messages`)
-- `POST /` - Create message with optional inline location
-  - Accepts: `titulo`, `conteudo`, `modo_entrega` (CENTRALIZADO/DESCENTRALIZADO), `tipo_politica` (WHITELIST/BLACKLIST/PUBLIC), `restricoes` (policy rules), `latitude`, `longitude`, `raio_metros`, `coordenadas` (SSID array), `nome_local`
-- `GET /` - Get user's received messages (paginated)
-- `GET /sent` - Get authenticated user's sent messages
-- `GET /:id` - Get message by ID
-- `POST /:id/receive` - Mark message as received (checks policy)
-- `PUT /:id` - Update message (author only)
-- `DELETE /:id` - Delete message (author only)
-- `POST /nearby` - Get messages by location (GPS/WIFI)
-  - Request: `{ latitude, longitude, wifi_ssids }`
+### Mensagens (`/api/messages`)
+- `POST /` - Criar mensagem com localização inline opcional
+  - Aceita: `titulo`, `conteudo`, `modo_entrega` (CENTRALIZADO/DESCENTRALIZADO), `tipo_politica` (WHITELIST/BLACKLIST/PUBLIC), `restricoes` (regras de política), `latitude`, `longitude`, `raio_metros`, `coordenadas` (array SSID), `nome_local`
+- `GET /` - Obter mensagens recebidas do usuário (paginadas)
+- `GET /sent` - Obter mensagens enviadas do usuário autenticado
+- `GET /:id` - Obter mensagem por ID
+- `POST /:id/receive` - Marcar mensagem como recebida (verifica política)
+- `PUT /:id` - Atualizar mensagem (apenas autor)
+- `DELETE /:id` - Excluir mensagem (apenas autor)
+- `POST /nearby` - Obter mensagens por localização (GPS/WIFI)
+  - Solicitação: `{ latitude, longitude, wifi_ssids }`
 
-### Notifications (`/api/notifications`)
-- `GET /` - Get user's notifications (limit: 50)
-- `GET /count` - Get unread notification count
-- `PUT /read` - Mark all notifications as read
-- `PUT /:id/read` - Mark notification as read (single)
-- `POST /` - Create notification (admin/system)
-- `DELETE /:id` - Delete notification (user owned)
+### Notificações (`/api/notifications`)
+- `GET /` - Obter notificações do usuário (limite: 50)
+- `GET /count` - Obter contagem de notificações não lidas
+- `PUT /read` - Marcar todas as notificações como lidas
+- `PUT /:id/read` - Marcar notificação como lida (individual)
+- `POST /` - Criar notificação (admin/sistema)
+- `DELETE /:id` - Excluir notificação (usuário proprietário)
 
 ### Mules (`/api/mules`)
-- `GET /assignments` - List pending assignments for authenticated mule
-- `POST /assignments/:id/accept` - Accept and deliver mule assignment
-- `GET /config` - Get mule configuration
-- `POST /config` - Create/update mule config (capacity, active status)
-- `DELETE /config` - Remove mule configuration
+- `GET /assignments` - Listar atribuições pendentes para mule autenticado
+- `POST /assignments/:id/accept` - Aceitar e entregar atribuição mule
+- `GET /config` - Obter configuração mule
+- `POST /config` - Criar/atualizar configuração mule (capacidade, status ativo)
+- `DELETE /config` - Remover configuração mule
+
 
 ---
 
-## Core Flows
+## Fluxos Principais
 
-### 1. User Authentication & Session Restore
-1. User registers/logs in → receives JWT token
-2. Token stored in AsyncStorage
-3. On app launch, AuthContext checks AsyncStorage and restores session
-4. Token added to all API requests via interceptor
+### 1. Autenticação de Usuário & Restauração de Sessão
+1. Usuário registra/loga in → recebe token JWT
+2. Token armazenado no AsyncStorage
+3. No lançamento do app, AuthContext verifica AsyncStorage e restaura sessão
+4. Token adicionado a todas as solicitações de API via interceptor
 
-**Files**:
-- `Frontend/src/contexts/AuthContext.js` - Auth state & persistence
-- `Frontend/src/components/Auth/LoginScreen.js` - Login form
-- `Frontend/src/components/Auth/RegisterScreen.js` - Register form
-- `Backend/middleware/auth.js` - JWT verification
+**Arquivos**:
+- `Frontend/src/contexts/AuthContext.js` - Estado de auth & persistência
+- `Frontend/src/components/Auth/LoginScreen.js` - Formulário de login
+- `Frontend/src/components/Auth/RegisterScreen.js` - Formulário de registro
+- `Backend/middleware/auth.js` - Verificação JWT
 
-### 2. Location Management (GPS & Wi-Fi Direct)
+### 2. Gerenciamento de Localização (GPS & Wi-Fi Direct)
 
-#### GPS Mode
-- Create location with latitude, longitude, and radius
-- Stored in `coordenadas_gps` table
-- Matching via distance calculation (Haversine formula)
+#### Modo GPS
+- Criar localização com latitude, longitude e raio
+- Armazenado na tabela `coordenadas_gps`
+- Correspondência via cálculo de distância (fórmula Haversine)
 
-#### Wi-Fi Direct Mode
-- Create location with SSID list (network names)
-- Stored in `ssids_wifi` table
-- Device connects to any SSID in the list to match location
-- No internet required — Wi-Fi Direct uses local peer-to-peer discovery
+#### Modo Wi-Fi Direct
+- Criar localização com lista SSID (nomes de rede)
+- Armazenado na tabela `ssids_wifi`
+- Dispositivo conecta a qualquer SSID na lista para corresponder localização
+- Sem internet necessária — Wi-Fi Direct usa descoberta peer-to-peer local
 
-#### Physical Device Behavior
-- When a device connects to a Wi-Fi network with a matching SSID, the location is **automatically matched** in the background via `verificar_localizacao_utilizador` stored procedure
-- Multiple SSIDs support fallback — if device can't connect to SSID-A, it tries SSID-B, etc.
-- No explicit authentication needed for location detection — only SSID matching
-- App calls `POST /messages/nearby` with connected SSID list to fetch messages for that location
+#### Comportamento de Dispositivo Físico
+- Quando um dispositivo conecta a uma rede Wi-Fi com SSID correspondente, a localização é **correspondida automaticamente** em segundo plano via `verificar_localizacao_utilizador` stored procedure
+- Múltiplos SSIDs suportam fallback — se dispositivo não puder conectar a SSID-A, tenta SSID-B, etc.
+- Sem autenticação explícita necessária para detecção de localização — apenas correspondência SSID
+- App chama `POST /messages/nearby` com lista SSID conectada para buscar mensagens para essa localização
 
-#### Wi-Fi Direct Explained
-Wi-Fi Direct is a peer-to-peer standard allowing devices to connect directly without an access point:
-1. **Setup**: User creates location "Office" with SSID "OfficeNet"
-2. **Detection**: Device connects to "OfficeNet" → OS notifies app
-3. **Message Discovery**: App sends SSID list to backend → receives nearby messages
-4. **Mule Relay**: Mule device (connected to same network) accepts assignment → relays to other P2P devices
-5. **Range**: Limited to Wi-Fi range (50-100m indoors)
-6. **No Internet**: Works completely offline within local network
+#### Wi-Fi Direct Explicado
+Wi-Fi Direct é um padrão peer-to-peer permitindo que dispositivos conectem diretamente sem ponto de acesso:
+1. **Configuração**: Usuário cria localização "Escritório" com SSID "OfficeNet"
+2. **Detecção**: Dispositivo conecta a "OfficeNet" → SO notifica app
+3. **Descoberta de Mensagem**: App envia lista SSID para backend → recebe mensagens próximas
+4. **Retransmissão Mule**: Dispositivo mule (conectado à mesma rede) aceita atribuição → retransmite para outros dispositivos P2P
+5. **Alcance**: Limitado ao alcance Wi-Fi (50-100m internos)
+6. **Sem Internet**: Funciona completamente offline dentro da rede local
 
-**Files**:
-- `Backend/BD/AnunciosLoc.sql` - Tables: `locais`, `coordenadas_gps`, `ssids_wifi`
-- `Frontend/src/components/Main/LocationsScreen.js` - Location UI (create, edit, delete, SSID input)
-- `Backend/services/locationService.js` - Location CRUD & coordinate transitions
+**Arquivos**:
+- `Backend/BD/AnunciosLoc.sql` - Tabelas: `locais`, `coordenadas_gps`, `ssids_wifi`
+- `Frontend/src/components/Main/LocationsScreen.js` - UI de localização (criar, editar, excluir, entrada SSID)
+- `Backend/services/locationService.js` - CRUD de localização & transições de coordenadas
 
-### 3. Message Creation & Delivery
+### 3. Criação de Mensagem & Entrega
 
-**Centralized (Server-based)**:
-1. User creates message with policy rules
-2. Backend finds all users in location via `verificar_localizacao_utilizador`
-3. Notifications logged to `logs_mensagens`
-4. Users poll or load "nearby messages" and receive
+**Centralizado (Baseado em Servidor)**:
+1. Usuário cria mensagem com regras de política
+2. Backend encontra todos os usuários na localização via `verificar_localizacao_utilizador`
+3. Notificações registradas em `logs_mensagens`
+4. Usuários fazem polling ou carregam "mensagens próximas" e recebem
 
-**Decentralized (Mule-based)**:
-1. User creates message with `modo_entrega: DESCENTRALIZADO`
-2. Backend assigns to active mules (up to capacity)
-3. Mules receive assignments in "Mulas" tab
-4. Mule accepts → delivery recorded + retransmit logged
-5. Mule relays to other devices in range (physical P2P)
+**Descentralizado (Baseado em Mule)**:
+1. Usuário cria mensagem com `modo_entrega: DESCENTRALIZADO`
+2. Backend atribui a mules ativas (até capacidade)
+3. Mules recebem atribuições na aba "Mulas"
+4. Mule aceita → entrega registrada + retransmissão registrada
+5. Mule retransmite para outros dispositivos no alcance (P2P físico)
 
-**Policy Enforcement**:
-- `WHITELIST`: Only users in `restricoes_mensagem` (chave=username, valor=allowed) receive
-- `BLACKLIST`: All except blacklisted users
-- `PUBLIC`: All users in location
+**Aplicação de Política**:
+- `WHITELIST`: Apenas usuários em `restricoes_mensagem` (chave=username, valor=permitido) recebem
+- `BLACKLIST`: Todos exceto usuários na lista negra
+- `PUBLIC`: Todos os usuários na localização
 
-**Files**:
-- `Backend/services/messageService.js` - Message creation, policy filtering, mule assignment
-- `Backend/controllers/messageController.js` - Message endpoints
-- `Frontend/src/components/Main/MessagesScreen.js` - Create/list/receive UI
-- `Frontend/src/services/api.js` - Message service calls
+**Arquivos**:
+- `Backend/services/messageService.js` - Criação de mensagem, filtragem de política, atribuição mule
+- `Backend/controllers/messageController.js` - Endpoints de mensagem
+- `Frontend/src/components/Main/MessagesScreen.js` - UI de criar/listar/receber
+- `Frontend/src/services/api.js` - Chamadas de serviço de mensagem
 
-### 4. Mule Assignment & Acceptance
-1. Mule registers config (activate, set capacity)
-2. New decentralized messages assign mules (prioritized by available capacity)
-3. Mule sees pending assignments in "Mulas" tab
-4. Mule accepts assignment → delivery record created + log entry
-5. Mule retransmits message to other devices (P2P via Wi-Fi Direct or local network)
+### 4. Atribuição Mule & Aceitação
+1. Mule registra configuração (ativar, definir capacidade)
+2. Novas mensagens descentralizadas atribuem mules (priorizadas por capacidade disponível)
+3. Mule vê atribuições pendentes na aba "Mulas"
+4. Mule aceita atribuição → registro de entrega criado + entrada de log
+5. Mule retransmite para outros dispositivos (P2P via Wi-Fi Direct ou rede local)
 
-**Files**:
-- `Backend/services/muleService.js` - Config management, assignment listing, acceptance
-- `Backend/controllers/muleController.js` - Mule endpoints
-- `Frontend/src/components/Main/MulesScreen.js` - Mule UI
-- `Backend/BD/AnunciosLoc.sql` - Tables: `config_mulas`, `mulas_mensagens`
+**Arquivos**:
+- `Backend/services/muleService.js` - Gerenciamento de configuração, listagem de atribuição, aceitação
+- `Backend/controllers/muleController.js` - Endpoints mule
+- `Frontend/src/components/Main/MulesScreen.js` - UI mule
+- `Backend/BD/AnunciosLoc.sql` - Tabelas: `config_mulas`, `mulas_mensagens`
 
-### 5. Notification System
-- Every message creation/receipt/relay logs to `logs_mensagens`
-- Users can view notifications (filtered by action)
-- Mark all as read or per-item mark/delete
-- Badge count on Notifications tab shows unread count
+### 5. Sistema de Notificação
+- Toda criação/recebimento/retransmissão de mensagem registra em `logs_mensagens`
+- Usuários podem visualizar notificações (filtradas por ação)
+- Marcar tudo como lida ou por item marcar/excluir
+- Badge de contagem na aba Notificações mostra contagem não lida
 
-**Files**:
-- `Backend/services/notificationService.js` - Notification querying, marking read
-- `Frontend/src/components/Main/NotificationsScreen.js` - Notification UI
-- `Frontend/src/contexts/NotificationsContext.js` - Notification polling & badge state
-
----
-
-## Database Schema Highlights
-
-### Core Tables
-- **utilizadores**: User accounts
-- **perfis_utilizador**: User profiles (display_name, bio, extra metadata)
-- **locais**: Locations (GPS or WIFI type)
-- **coordenadas_gps**: GPS coordinates with radius
-- **ssids_wifi**: Wi-Fi SSIDs per location
-- **mensagens**: Published messages
-- **entregas_mensagens**: Message delivery records (who received what)
-- **restricoes_mensagem**: Policy rules per message
-- **logs_mensagens**: Audit log (notifications, delivery, relay events)
-- **mulas_mensagens**: Mule assignments (message → mule)
-- **config_mulas**: Mule configuration (capacity, active status)
+**Arquivos**:
+- `Backend/services/notificationService.js` - Consulta de notificação, marcar como lida
+- `Frontend/src/components/Main/NotificationsScreen.js` - UI de notificação
+- `Frontend/src/contexts/NotificationsContext.js` - Polling de notificação & estado de badge
 
 ---
 
-## Project Feature Phases
+## Destaques do Esquema de Banco de Dados
 
-### ✅ Fase Inicial (Completed)
-- [x] User authentication (login/register/session)
-- [x] Profile management (create/edit)
-- [x] Location management (GPS & Wi-Fi SSID)
-- [x] Message creation with policy & delivery mode
-- [x] Message receiving & nearby search
-- [x] Notifications logging & UI
-- [x] Mule configuration & assignment acceptance
-- [x] Offline persistence (AsyncStorage for auth/config)
+### Tabelas Principais
+- **utilizadores**: Contas de usuário
+- **perfis_utilizador**: Perfis de usuário (display_name, bio, metadados extras)
+- **locais**: Localizações (tipo GPS ou WIFI)
+- **coordenadas_gps**: Coordenadas GPS com raio
+- **ssids_wifi**: SSIDs Wi-Fi por localização
+- **mensagens**: Mensagens publicadas
+- **entregas_mensagens**: Registros de entrega de mensagem (quem recebeu o quê)
+- **restricoes_mensagem**: Regras de política por mensagem
+- **logs_mensagens**: Log de auditoria (notificações, entrega, eventos de retransmissão)
+- **mulas_mensagens**: Atribuições mule (mensagem → mule)
+- **config_mulas**: Configuração mule (capacidade, status ativo)
 
-### 🔄 Fase Intermediária (Partial - In Progress)
-- [x] Decentralized message routing via mules
-- [x] Policy-based message filtering (whitelist/blacklist/public)
-- [x] Notification polling & badge
-- [ ] **TODO**: Offline message queue (when mule is offline, queue for later retry)
-- [ ] **TODO**: Mule priority scheduling (high-priority messages first)
-- [ ] **TODO**: Message encryption for sensitive policies
-- [ ] **TODO**: Audit logs for compliance
+---
 
-### 🚀 Fase Final (Not Started)
-- [ ] Multi-hop relay (message passes through 2+ mules)
-- [ ] Mesh networking (dynamic mesh without central server)
-- [ ] Advanced P2P (BLE, Bluetooth, native Wi-Fi Direct)
-- [ ] Analytics dashboard (message delivery stats, network health)
-- [ ] End-to-end encryption (RSA key exchange)
-- [ ] Digital signatures for message authenticity
-- [ ] Rate limiting & abuse prevention
-- [ ] Admin panel for network monitoring
+## Fases de Recurso do Projeto
+
+### ✅ Fase Inicial (Concluída)
+- [x] Autenticação de usuário (login/registro/sessão)
+- [x] Gerenciamento de perfil (criar/editar)
+- [x] Gerenciamento de localização (GPS & SSID Wi-Fi)
+- [x] Criação de mensagem com política & modo de entrega
+- [x] Recebimento de mensagem & busca próxima
+- [x] Registro de notificações & UI
+- [x] Configuração mule & aceitação de atribuição
+- [x] Persistência offline (AsyncStorage para auth/config)
+
+### 🔄 Fase Intermediária (Parcial - Em Andamento)
+- [x] Roteamento de mensagem descentralizada via mules
+- [x] Filtragem baseada em política (lista branca/lista negra/pública)
+- [x] Polling de notificação & badge
+- [ ] **TODO**: Fila de mensagem offline (quando mule está offline, fila para nova tentativa)
+- [ ] **TODO**: Agendamento de prioridade mule (mensagens de alta prioridade primeiro)
+- [ ] **TODO**: Criptografia de mensagem para políticas sensíveis
+- [ ] **TODO**: Logs de auditoria para conformidade
+
+### 🚀 Fase Final (Não Iniciada)
+- [ ] Retransmissão multi-hop (mensagem passa por 2+ mules)
+- [ ] Rede mesh (mesh dinâmico sem servidor central)
+- [ ] P2P avançado (BLE, Bluetooth, Wi-Fi Direct nativo)
+- [ ] Painel de análise (estatísticas de entrega de mensagem, saúde da rede)
+- [ ] Criptografia ponta-a-ponta (troca de chave RSA)
+- [ ] Assinaturas digitais para autenticidade de mensagem
+- [ ] Limitação de taxa & prevenção de abuso
+- [ ] Painel de admin para monitoramento de rede
 
 ---
 

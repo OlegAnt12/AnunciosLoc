@@ -1,98 +1,98 @@
-# Devcontainer (Docker Compose) for AnunciosLoc
+# Devcontainer (Docker Compose) para AnunciosLoc
 
-This devcontainer runs two services using Docker Compose:
+Este devcontainer executa dois serviços usando Docker Compose:
 
-- `db`: MySQL 8 preloaded with `BD/AnunciosLoc.sql` (mounted into `/docker-entrypoint-initdb.d`) so the schema is initialized automatically.
-- `app`: Node.js development container where you can run tests and the API server.
+- `db`: MySQL 8 pré-carregado com `BD/AnunciosLoc.sql` (montado em `/docker-entrypoint-initdb.d`) para que o esquema seja inicializado automaticamente.
+- `app`: Contêiner de desenvolvimento Node.js onde você pode executar testes e servidor API.
 
-Quick start
+Início rápido
 
-1. In VS Code, open the repo and choose "Reopen in Container" (requires Remote - Containers extension).
-2. The container will build and start. The `postCreateCommand` will:
+1. No VS Code, abra o repositório e escolha "Reopen in Container" (requer extensão Remote - Containers).
+2. O contêiner será construído e iniciado. O `postCreateCommand` irá:
    - `cd backend && npm install`
-   - Wait for the `db` service to be ready
-   - Run `npm run db:init` (it will use the `mysql` client inside the `app` container to import `BD/AnunciosLoc.sql`).
+   - Aguardar o serviço `db` estar pronto
+   - Executar `npm run db:init` (ele usará o cliente `mysql` dentro do contêiner `app` para importar `BD/AnunciosLoc.sql`).
 
-If you prefer to run locally in a terminal (without VS Code devcontainer):
+Se preferir executar localmente em um terminal (sem devcontainer VS Code):
 
-1. Ensure Docker and Docker Compose are installed.
-2. From the repository root run (Makefile added for convenience):
+1. Garanta que Docker e Docker Compose estejam instalados.
+2. Do diretório raiz do repositório execute (Makefile adicionado para conveniência):
 
    make up
 
-3. Enter the app container (optional):
+3. Entre no contêiner app (opcional):
 
    make shell-app
 
-4. Start Expo (LAN) from inside the container or use the helper Make target:
+4. Inicie Expo (LAN) de dentro do contêiner ou use o auxiliar Make target:
 
-   make start-expo       # Runs the helper inside the app container
-   # Or run locally (host):
+   make start-expo       # Executa o auxiliar dentro do contêiner app
+   # Ou execute localmente (host):
    make start-expo-local
 
-5. Install dependencies and run tests (from inside the container):
+5. Instale dependências e execute testes (de dentro do contêiner):
 
    make test-backend
 
-Notes
+Notas
 
-- There's an npm script in the Frontend to start Expo in LAN mode using the helper script:
-  - `cd Frontend && npm run start:lan` (this runs `../scripts/start-expo.sh`).
-- VS Code task: open the Command Palette and run `Tasks: Run Task` → `Start Expo (LAN)` to start Expo from the editor.
+- Há um script npm na Frontend para iniciar Expo em modo LAN usando o script auxiliar:
+  - `cd Frontend && npm run start:lan` (executa `../scripts/start-expo.sh`).
+- Tarefa VS Code: abra a Paleta de Comandos e execute `Tasks: Run Task` → `Start Expo (LAN)` para iniciar Expo do editor.
 
-Using physical devices (phones / tablets) on the same LAN or via USB (Expo Go)
+Usando dispositivos físicos (telefones/tablets) na mesma LAN ou via USB (Expo Go)
 
-- Option A — Use published ports (recommended, works on all OSes):
-  - The `app` service publishes the API at `http://<host-ip>:3000` and Metro at `19000-19002` (Expo). Find your host machine IP with `ip a` / `ifconfig` / `ipconfig` and use it on the device.
-  - Start Expo from the `Frontend` folder inside the app container or on the host:
+- Opção A — Use portas publicadas (recomendado, funciona em todos OSes):
+  - O serviço `app` publica a API em `http://<ip-host>:3000` e Metro em `19000-19002` (Expo). Encontre o IP da máquina host com `ip a` / `ifconfig` / `ipconfig` e use no dispositivo.
+  - Inicie Expo da pasta `Frontend` dentro do contêiner app ou no host:
 
     cd Frontend
     npm install
-    # Preferred: use LAN mode and set packager host (recommended for Expo Go on physical devices)
-    REACT_NATIVE_PACKAGER_HOSTNAME=<host-ip> npx expo start --lan
+    # Preferido: use modo LAN e defina host packager (recomendado para Expo Go em dispositivos físicos)
+    REACT_NATIVE_PACKAGER_HOSTNAME=<ip-host> npx expo start --lan
 
-  - If you prefer automatic handling, use the helper script from the repo root (inside the container):
+  - Se preferir manipulação automática, use o script auxiliar do repositório raiz (dentro do contêiner):
 
     ./scripts/start-expo.sh
 
-  - Ensure your phone and your dev machine are on the same Wi‑Fi network and use **Expo Go** to scan the QR code shown in the Metro/Expo console.
-  - If you run into CORS issues, set `ALLOWED_ORIGINS` (environment variable in `docker-compose.yml`) to include your device IP or `*` for development.
+  - Garanta que seu telefone e máquina dev estejam na mesma rede Wi-Fi e use **Expo Go** para escanear o QR code mostrado no console Metro/Expo.
+  - Se encontrar problemas CORS, defina `ALLOWED_ORIGINS` (variável de ambiente em `docker-compose.yml`) para incluir o IP do dispositivo ou `*` para desenvolvimento.
 
-- Option B — Use host networking (Linux only):
-  - Use the host override to make containers share the host network (no port mappings required):
+- Opção B — Use rede host (Linux apenas):
+  - Use o override host para fazer contêineres compartilharem a rede host (sem mapeamentos de porta necessários):
 
     docker compose -f docker-compose.yml -f docker-compose.override.host.yml up --build
 
-  - This is helpful when physical devices need direct access to services on the host.
+  - Isso é útil quando dispositivos físicos precisam de acesso direto aos serviços no host.
 
-- Option C — Use USB & adb (Android):
-  - Connect your Android device via USB to the host machine.
-  - On the host, run `adb devices` to confirm the device is connected.
-  - Use `adb reverse tcp:3000 tcp:3000` and `adb reverse tcp:19000 tcp:19000` if needed so the device can reach the containerized services via `localhost`.
+- Opção C — Use USB & adb (Android):
+  - Conecte seu dispositivo Android via USB à máquina host.
+  - No host, execute `adb devices` para confirmar o dispositivo conectado.
+  - Use `adb reverse tcp:3000 tcp:3000` e `adb reverse tcp:19000 tcp:19000` se necessário para que o dispositivo alcance os serviços conteinerizados via `localhost`.
 
-Expo-specific notes
+Notas específicas do Expo
 
-- Expo Go expects Metro to advertise a host/IP that the mobile device can reach. Use `--lan` mode and set `REACT_NATIVE_PACKAGER_HOSTNAME` to your host IP (or use `--tunnel` which works without network config but can be slower).
-- You can run Expo inside the app container and scan the QR code from your device. If you prefer to run Expo on the host, point Expo to `http://<host-ip>:19000`.
-- If the device cannot scan the QR code, you can use the URL or manually enter the IP shown in the Metro output.
+- Expo Go espera que Metro anuncie um host/IP que o dispositivo móvel possa alcançar. Use modo `--lan` e defina `REACT_NATIVE_PACKAGER_HOSTNAME` para o IP do host (ou use `--tunnel` que funciona sem configuração de rede, mas pode ser mais lento).
+- Você pode executar Expo dentro do contêiner app e escanear o QR code do seu dispositivo. Se preferir executar Expo no host, aponte Expo para `http://<ip-host>:19000`.
+- Se o dispositivo não puder escanear o QR code, use a URL ou insira manualmente o IP mostrado na saída Metro.
 
-Notes and tips
+Notas e dicas
 
-- The backend binds to the container interface and Docker publishes it on the host; using `http://<host-ip>:3000` in your mobile app or `ALLOWED_ORIGINS` is usually the simplest setup.
-- If you use the VS Code devcontainer, be aware that some device connection workflows (e.g., USB forwarding with `adb`) must be performed on the host machine rather than inside the container—devcontainer acts as an environment for code and services but device USB forwarding is host-level.
-- If you have trouble connecting, try temporarily adding `ALLOWED_ORIGINS: "*"` to the `app` service environment and use host networking if on Linux.
+- O backend se liga à interface do contêiner e Docker publica no host; usar `http://<ip-host>:3000` no seu app móvel ou `ALLOWED_ORIGINS` geralmente é a configuração mais simples.
+- Se usar o devcontainer VS Code, esteja ciente de que alguns fluxos de conexão de dispositivo (ex.: encaminhamento USB com `adb`) devem ser executados na máquina host em vez de dentro do contêiner—devcontainer age como um ambiente para código e serviços, mas encaminhamento USB de dispositivo é nível host.
+- Se tiver problemas para conectar, tente adicionar temporariamente `ALLOWED_ORIGINS: "*"` ao ambiente do serviço `app` e use rede host se estiver no Linux.
 
-Notes
+Notas
 
-- The DB credentials for the devcontainer are:
+- As credenciais DB para o devcontainer são:
   - host: `db`
-  - port: `3306`
-  - user: `root`
-  - password: `rootpwd`
-  - database: `anunciosloc`
+  - porta: `3306`
+  - usuário: `root`
+  - senha: `rootpwd`
+  - banco de dados: `anunciosloc`
 
-- The `db:init` script uses the `mysql` CLI. The `app` image includes a MySQL client to support this.
+- O script `db:init` usa o CLI `mysql`. A imagem `app` inclui um cliente MySQL para suportar isso.
 
-- If you want to reinitialize the DB, remove the `db` service's volume so MySQL re-runs the init scripts (or change the mounted file).
+- Se quiser reinicializar o DB, remova o volume do serviço `db` para que MySQL execute novamente os scripts init (ou mude o arquivo montado).
 
-If you want, I can also add a small Makefile or npm script at the repo root to run common dev tasks (start compose, stop, shell into app, run tests).
+Se quiser, posso adicionar um pequeno Makefile ou script npm na raiz do repositório para executar tarefas comuns de dev (iniciar compose, parar, shell no app, executar testes).

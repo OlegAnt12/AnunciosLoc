@@ -1,509 +1,509 @@
-# AnunciosLoc - QA Testing Checklist
+# AnunciosLoc - Checklist de Testes QA
 
-## Pre-Testing Setup
-- [ ] Clone latest code from main branch
-- [ ] Run `npm install` in both backend and frontend directories
-- [ ] Ensure MySQL database is running and initialized (run `npm run init-db` in backend)
-- [ ] Start backend server: `npm start` (backend folder)
-- [ ] Configure frontend `api.js` with correct backend URL (http://localhost:3000 for local testing)
-- [ ] Install Expo Go app on test devices (iOS/Android)
-- [ ] Run frontend: `npm start` in Frontend folder and open on Expo Go
-
----
-
-## Phase 1: Authentication & Session Management
-
-### Test 1.1: User Registration
-- [ ] Open app and see "Register" screen
-- [ ] Fill in email, password, confirm password, and name fields
-- [ ] Verify password confirmation validation (error if mismatch)
-- [ ] Submit valid registration form
-- [ ] Verify success alert and redirect to login screen
-- [ ] Try registering with same email again → verify error response
-- [ ] Verify new user is created in database (check MySQL `users` table)
-
-### Test 1.2: User Login
-- [ ] Enter valid email and password from registered user
-- [ ] Verify JWT token is received and stored
-- [ ] Verify redirect to main app (HomeScreen)
-- [ ] Test with incorrect password → verify error message
-- [ ] Test with non-existent email → verify error message
-
-### Test 1.3: Session Persistence
-- [ ] Login to app
-- [ ] Kill and restart app
-- [ ] Verify user is still logged in (no need to re-login)
-- [ ] Verify token is still valid
-- [ ] Logout from app
-- [ ] Restart app
-- [ ] Verify back on login screen
-
-### Test 1.4: Logout
-- [ ] Login to app
-- [ ] Navigate to Profile screen
-- [ ] Tap logout/exit button
-- [ ] Verify redirect to login screen
-- [ ] Verify token is cleared from AsyncStorage
-
-### Test 1.5: Token Expiration
-- [ ] Login to app
-- [ ] Manually expire token in database (set expires_at to past date)
-- [ ] Try to make API request (e.g., refresh notifications)
-- [ ] Verify 401 response and redirect to login screen
+## Configuração Pré-Teste
+- [ ] Clonar código mais recente da branch main
+- [ ] Executar `npm install` em pastas backend e frontend
+- [ ] Garantir que banco de dados MySQL esteja executando e inicializado (executar `npm run init-db` no backend)
+- [ ] Iniciar servidor backend: `npm start` (pasta backend)
+- [ ] Configurar `api.js` frontend com URL correta do backend (http://localhost:3000 para teste local)
+- [ ] Instalar app Expo Go em dispositivos de teste (iOS/Android)
+- [ ] Executar frontend: `npm start` na pasta Frontend e abrir no Expo Go
 
 ---
 
-## Phase 2: Profile Management
+## Fase 1: Autenticação e Persistência de Sessão
 
-### Test 2.1: View Profile
-- [ ] Login to app
-- [ ] Navigate to Profile tab
-- [ ] Verify user name, email, phone, bio, avatar displayed
-- [ ] Verify data matches what was entered during registration
+### Teste 1.1: Registro de Usuário
+- [ ] Abrir app e ver tela "Register"
+- [ ] Preencher campos email, senha, confirmar senha e nome
+- [ ] Verificar validação de confirmação de senha (erro se não corresponder)
+- [ ] Submeter formulário de registro válido
+- [ ] Verificar alerta de sucesso e redirecionamento para tela de login
+- [ ] Tentar registrar com mesmo email novamente → verificar erro de resposta
+- [ ] Verificar novo usuário criado no banco de dados (verificar tabela MySQL `users`)
 
-### Test 2.2: Edit Profile
-- [ ] From Profile screen, tap edit button/pencil icon
-- [ ] Update name, email, phone, bio fields
-- [ ] Submit changes
-- [ ] Verify success alert
-- [ ] Verify changes persist after app restart
-- [ ] Verify changes reflected in database
+### Teste 1.2: Login de Usuário
+- [ ] Inserir email e senha válidos de usuário registrado
+- [ ] Verificar token JWT recebido e armazenado
+- [ ] Verificar redirecionamento para app principal (HomeScreen)
+- [ ] Testar com senha incorreta → verificar mensagem de erro
+- [ ] Testar com email inexistente → verificar mensagem de erro
 
-### Test 2.3: Profile Image (if implemented)
-- [ ] Tap on avatar/profile picture
-- [ ] Select new image from gallery or take photo
-- [ ] Verify image uploads to server
-- [ ] Verify image displays in profile
-- [ ] Verify persistence after restart
+### Teste 1.3: Persistência de Sessão
+- [ ] Fazer login no app
+- [ ] Matar e reiniciar app
+- [ ] Verificar usuário ainda logado (sem necessidade de re-login)
+- [ ] Verificar token ainda válido
+- [ ] Fazer logout do app
+- [ ] Reiniciar app
+- [ ] Verificar de volta na tela de login
 
----
+### Teste 1.4: Logout
+- [ ] Fazer login no app
+- [ ] Navegar para tela Profile
+- [ ] Tocar no botão logout/exit
+- [ ] Verificar redirecionamento para tela de login
+- [ ] Verificar token limpo do AsyncStorage
 
-## Phase 3: Location Management
-
-### Test 3.1: Create GPS Location
-- [ ] Navigate to Locations screen
-- [ ] Tap "Add Location" button
-- [ ] Select "GPS" type
-- [ ] Set name: "Test Park"
-- [ ] Tap map or enter coordinates manually (e.g., 38.736, -9.143)
-- [ ] Set radius to 500m
-- [ ] Submit
-- [ ] Verify location appears in list
-- [ ] Verify location saved in database with correct coordinates
-- [ ] Tap on location in list to verify map displays correct marker
-
-### Test 3.2: Create Wi-Fi Location
-- [ ] Tap "Add Location"
-- [ ] Select "WIFI" type
-- [ ] Set name: "Coffee Shop"
-- [ ] Tap "Scan SSIDs" button
-- [ ] Select one or more SSID from nearby networks
-- [ ] Submit
-- [ ] Verify location appears in list with selected SSIDs
-- [ ] Verify saved in database with SSID list
-
-### Test 3.3: Edit Location
-- [ ] Tap on existing location in list
-- [ ] Tap edit button
-- [ ] Change name, coordinates, or SSIDs
-- [ ] Submit changes
-- [ ] Verify changes persist
-- [ ] Verify database updated
-
-### Test 3.4: Delete Location
-- [ ] Tap on location
-- [ ] Tap delete button
-- [ ] Confirm deletion in alert
-- [ ] Verify location removed from list
-- [ ] Verify location removed from database
-
-### Test 3.5: Map Display
-- [ ] With multiple locations, verify all markers appear on map
-- [ ] Tap on marker to see location info popup
-- [ ] Zoom in/out and verify markers scale correctly
-- [ ] Verify user current location (blue dot) displays if permissions granted
+### Teste 1.5: Expiração de Token
+- [ ] Fazer login no app
+- [ ] Expirar manualmente token no banco de dados (definir expires_at para passado)
+- [ ] Tentar fazer solicitação de API (ex.: atualizar notificações)
+- [ ] Verificar resposta 401 e redirecionamento para login
 
 ---
 
-## Phase 4: Message System - Centralized Mode
+## Fase 2: Gerenciamento de Perfis
 
-### Test 4.1: Create Message (Centralized, Public)
-- [ ] Navigate to Messages screen
-- [ ] Tap "Create Message" button
-- [ ] Fill in:
-  - Title: "Test Event"
-  - Content: "Meeting tomorrow at 3pm"
-  - Delivery Mode: **Centralizado**
-  - Policy Type: **Public**
-- [ ] Create inline GPS location (or reference existing)
-- [ ] Submit
-- [ ] Verify success alert
-- [ ] Verify message appears in "Sent" tab
-- [ ] Verify message stored in database with correct mode/policy
+### Teste 2.1: Visualizar Perfil
+- [ ] Fazer login no app
+- [ ] Navegar para aba Profile
+- [ ] Verificar nome de usuário, email, telefone, bio, avatar exibidos
+- [ ] Verificar dados correspondem ao inserido durante registro
 
-### Test 4.2: Create Message with Whitelist Policy
-- [ ] Create new message with:
-  - Policy Type: **Whitelist**
-  - Add policy rules (usernames who can receive)
-- [ ] Submit
-- [ ] Verify policy_mensagens entries created in database for allowed users
-- [ ] Login as non-whitelisted user → verify message NOT visible in received messages
-- [ ] Login as whitelisted user → verify message visible in received messages
+### Teste 2.2: Editar Perfil
+- [ ] Da tela Profile, tocar no botão edit/pencil icon
+- [ ] Atualizar campos nome, email, telefone, bio
+- [ ] Submeter mudanças
+- [ ] Verificar alerta de sucesso
+- [ ] Verificar mudanças persistem após reinício do app
+- [ ] Verificar mudanças refletidas no banco de dados
 
-### Test 4.3: Create Message with Blacklist Policy
-- [ ] Create message with Policy Type: **Blacklist**
-- [ ] Add blocked usernames
-- [ ] Submit
-- [ ] Login as blocked user → verify message not visible
-- [ ] Login as other user → verify message visible
-
-### Test 4.4: Receive Message (as Different User)
-- [ ] Create message from User A (Centralizado, Public)
-- [ ] Logout from User A
-- [ ] Login as User B
-- [ ] Navigate to "Received" tab in Messages screen
-- [ ] Verify message from User A appears in list
-- [ ] Tap on message to see full content and details
-
-### Test 4.5: Mark Message as Read/Received
-- [ ] As User B, tap "Receive" button on message
-- [ ] Verify message marked as delivered
-- [ ] Verify delivery recorded in entregas_mensagens table
-- [ ] Verify notification logged in logs_mensagens
-
-### Test 4.6: Nearby Messages Tab
-- [ ] Create message from User A with GPS location (e.g., 38.736, -9.143)
-- [ ] Login as User B with location near that area (within radius)
-- [ ] Go to Messages screen → Nearby tab
-- [ ] Verify message from User A appears as "nearby"
-- [ ] Verify distance calculated correctly
+### Teste 2.3: Imagem de Perfil (se implementado)
+- [ ] Tocar no avatar/imagem de perfil
+- [ ] Selecionar nova imagem da galeria ou tirar foto
+- [ ] Verificar imagem faz upload para servidor
+- [ ] Verificar imagem exibe no perfil
+- [ ] Verificar persistência após reinício
 
 ---
 
-## Phase 5: Message System - Decentralized Mode
+## Fase 3: Gerenciamento de Localização
 
-### Test 5.1: Create Message (Descentralizado)
-- [ ] Create message with Delivery Mode: **Descentralizado**
-- [ ] Add inline Wi-Fi location with SSID
-- [ ] Submit
-- [ ] Verify message stored with modo_entrega = "Descentralizado"
+### Teste 3.1: Criar Localização GPS
+- [ ] Navegar para tela Locations
+- [ ] Tocar "Add Location" button
+- [ ] Selecionar tipo "GPS"
+- [ ] Definir nome: "Parque Teste"
+- [ ] Tocar no mapa ou inserir coordenadas manualmente (ex.: 38.736, -9.143)
+- [ ] Definir raio para 500m
+- [ ] Submeter
+- [ ] Verificar localização aparece na lista
+- [ ] Verificar localização salva no banco de dados com coordenadas corretas
+- [ ] Tocar na localização na lista para verificar mapa exibe marcador correto
 
-### Test 5.2: P2P Message Reception (Manual)
-- [ ] With message in Descentralizado mode
-- [ ] Navigate to Nearby tab
-- [ ] If another device is nearby, should appear in nearby messages
-- [ ] Verify "Receive" action works and records delivery
-- [ ] Note: Full Wi-Fi Direct P2P implementation requires library installation (future)
+### Teste 3.2: Criar Localização Wi-Fi
+- [ ] Tocar "Add Location"
+- [ ] Selecionar tipo "WIFI"
+- [ ] Definir nome: "Café WiFi"
+- [ ] Tocar "Scan SSIDs" button
+- [ ] Selecionar um ou mais SSID de redes próximas
+- [ ] Submeter
+- [ ] Verificar localização aparece na lista com SSIDs selecionados
+- [ ] Verificar salvo no banco de dados com lista SSID
 
----
+### Teste 3.3: Editar Localização
+- [ ] Tocar em localização existente na lista
+- [ ] Tocar botão edit
+- [ ] Mudar nome, coordenadas ou SSIDs
+- [ ] Submeter mudanças
+- [ ] Verificar mudanças persistem
+- [ ] Verificar banco de dados atualizado
 
-## Phase 6: Notifications System
+### Teste 3.4: Excluir Localização
+- [ ] Tocar em localização
+- [ ] Tocar botão delete
+- [ ] Confirmar exclusão no alerta
+- [ ] Verificar localização removida da lista
+- [ ] Verificar localização removida do banco de dados
 
-### Test 6.1: View Notifications List
-- [ ] Create and receive multiple messages as User B
-- [ ] Navigate to Notifications tab
-- [ ] Verify list shows all received messages/notifications
-- [ ] Verify unread count badge appears on tab
-
-### Test 6.2: Mark Single Notification as Read
-- [ ] In Notifications screen, tap on notification item
-- [ ] Verify visual change (fade, checkmark, etc.)
-- [ ] Verify marked as read in database (logs_mensagens.seen != NULL)
-
-### Test 6.3: Mark All as Read
-- [ ] With multiple unread notifications
-- [ ] Tap "Mark All as Read" button
-- [ ] Verify all notifications marked as read
-- [ ] Verify badge count resets to 0
-
-### Test 6.4: Delete Notification
-- [ ] Tap delete/trash icon on notification
-- [ ] Confirm deletion in alert
-- [ ] Verify notification removed from list
-- [ ] Verify still queryable in backend but marked as deleted
-
----
-
-## Phase 7: Mule/Relay System
-
-### Test 7.1: Register as Mule
-- [ ] Navigate to Mules screen
-- [ ] Tap "Configuration" tab
-- [ ] Tap "Register as Mule" or similar button
-- [ ] Set capacity: 20 messages
-- [ ] Tap Save
-- [ ] Verify mula entry created in database
-- [ ] Verify capacity stored
-
-### Test 7.2: View Mule Assignments
-- [ ] With User A registered as mule
-- [ ] Create message from User C targeting a distant location
-- [ ] System assigns message to mule (User A)
-- [ ] As User A, go to Mules screen → Assignments tab
-- [ ] Verify message assignment listed
-- [ ] Verify assignment shows title, location, priority
-
-### Test 7.3: Accept Mule Assignment
-- [ ] Tap "Accept" on assignment
-- [ ] Confirm in alert
-- [ ] Verify assignment removed from list
-- [ ] Verify delivery recorded in entregas_mensagens
-- [ ] Verify status changed in mulas_mensagens to "delivered"
-
-### Test 7.4: View Mule Statistics
-- [ ] As mule, go to Configuration tab
-- [ ] Verify statistics card shows:
-  - Total assignments
-  - Delivered count
-  - Pending count
-  - Average delivery time (if available)
-- [ ] Verify stats match database aggregates
-
-### Test 7.5: Update Mule Capacity
-- [ ] Change capacity slider to different value
-- [ ] Tap Save
-- [ ] Verify capacity updated in database
-- [ ] Logout and login → verify persisted
-
-### Test 7.6: Unregister as Mule
-- [ ] Tap "Remove" button in Configuration tab
-- [ ] Confirm in alert
-- [ ] Verify mula entry deleted/deactivated in database
-- [ ] Verify no more assignments visible
+### Teste 3.5: Exibição de Mapa
+- [ ] Com múltiplas localizações, verificar todos marcadores aparecem no mapa
+- [ ] Tocar em marcador para ver popup de info da localização
+- [ ] Zoom in/out e verificar marcadores escalam corretamente
+- [ ] Verificar localização atual do usuário (ponto azul) exibe se permissões concedidas
 
 ---
 
-## Phase 8: Offline Queue System
+## Fase 4: Sistema de Mensagens - Modo Centralizado
 
-### Test 8.1: Create Message While Offline
-- [ ] Enable airplane mode on test device
-- [ ] Navigate to Messages screen
-- [ ] Create new message (all fields valid)
-- [ ] Submit
-- [ ] Verify "Message queued" alert instead of "Message created"
-- [ ] Verify AsyncStorage contains queued message
-- [ ] Disable airplane mode
-- [ ] Verify message automatically sent to backend
-- [ ] Verify "Offline sync" notification appears
+### Teste 4.1: Criar Mensagem (Centralizado, Público)
+- [ ] Navegar para tela Messages
+- [ ] Tocar "Create Message" button
+- [ ] Preencher:
+  - Título: "Evento Teste"
+  - Conteúdo: "Encontro amanhã às 3pm"
+  - Modo de Entrega: **Centralizado**
+  - Tipo de Política: **Público**
+- [ ] Criar localização inline GPS (ou referenciar existente)
+- [ ] Submeter
+- [ ] Verificar alerta de sucesso
+- [ ] Verificar mensagem aparece na aba "Sent"
+- [ ] Verificar mensagem armazenada no banco de dados com modo/política corretos
 
-### Test 8.2: Create Location While Offline
-- [ ] Enable airplane mode
-- [ ] Go to Locations screen
-- [ ] Add new GPS location
-- [ ] Tap Submit
-- [ ] Verify "Location queued" alert
-- [ ] Disable airplane mode
-- [ ] Verify location synced to backend
+### Teste 4.2: Criar Mensagem com Política Whitelist
+- [ ] Criar nova mensagem com:
+  - Tipo de Política: **Whitelist**
+  - Adicionar regras de política (usuários que podem receber)
+- [ ] Submeter
+- [ ] Verificar entradas policies_mensagens criadas no banco de dados para usuários permitidos
+- [ ] Fazer login como usuário não na whitelist → verificar mensagem NÃO visível em mensagens recebidas
+- [ ] Fazer login como usuário na whitelist → verificar mensagem visível em mensagens recebidas
 
-### Test 8.3: Queue Retry Mechanism
-- [ ] Queue 3-5 messages while offline
-- [ ] Go online
-- [ ] Verify all queued messages sent in batch
-- [ ] Verify database shows all messages created
-- [ ] Verify queue cleared from AsyncStorage
+### Teste 4.3: Criar Mensagem com Política Blacklist
+- [ ] Criar mensagem com Tipo de Política: **Blacklist**
+- [ ] Adicionar usuários bloqueados
+- [ ] Submeter
+- [ ] Fazer login como usuário bloqueado → verificar mensagem não visível
+- [ ] Fazer login como outro usuário → verificar mensagem visível
 
-### Test 8.4: Duplicate Prevention
-- [ ] Queue message while offline
-- [ ] Go online (message syncs)
-- [ ] Manually trigger sync again
-- [ ] Verify duplicate not created in database
+### Teste 4.4: Receber Mensagem (como Usuário Diferente)
+- [ ] Criar e enviar mensagem de Usuário A (Centralizado, Público)
+- [ ] Fazer logout de Usuário A
+- [ ] Fazer login como Usuário B
+- [ ] Navegar para aba "Received" na tela Messages
+- [ ] Verificar mensagem de Usuário A aparece na lista
+- [ ] Tocar na mensagem para ver conteúdo completo e detalhes
 
----
+### Teste 4.5: Marcar Mensagem como Lida/Recebida
+- [ ] Como Usuário B, tocar botão "Receive" na mensagem
+- [ ] Verificar mensagem marcada como entregue
+- [ ] Verificar entrega registrada na tabela entregas_mensagens
+- [ ] Verificar notificação logada em logs_mensagens
 
-## Phase 9: UI/UX Testing
-
-### Test 9.1: Theme Consistency
-- [ ] Navigate through all screens
-- [ ] Verify consistent color scheme (orange #FF6B35, grays)
-- [ ] Verify text sizes readable
-- [ ] Verify icons clear and intuitive
-
-### Test 9.2: Navigation
-- [ ] Tab navigation working smoothly
-- [ ] Back button behavior consistent
-- [ ] Modals open/close correctly
-- [ ] No navigation loops or dead ends
-
-### Test 9.3: Form Validation
-- [ ] All form fields validate before submission
-- [ ] Error messages clear and actionable
-- [ ] Loading spinners display during API calls
-- [ ] Disabled buttons during processing
-
-### Test 9.4: List Performance
-- [ ] Lists scroll smoothly with many items (100+)
-- [ ] No lag or freezing
-- [ ] Pull-to-refresh works on all list screens
+### Teste 4.6: Aba Mensagens Próximas
+- [ ] Criar mensagem de Usuário A com localização GPS (ex.: 38.736, -9.143)
+- [ ] Fazer login como Usuário B com localização próxima dessa área (dentro do raio)
+- [ ] Ir para tela Messages → aba Nearby
+- [ ] Verificar mensagem de Usuário A aparece como "próxima"
+- [ ] Verificar distância calculada corretamente
 
 ---
 
-## Phase 10: API & Backend Testing
+## Fase 5: Sistema de Mensagens - Modo Descentralizado
 
-### Test 10.1: API Request Headers
-- [ ] Use browser DevTools or Charles Proxy to inspect API requests
-- [ ] Verify Authorization header contains valid JWT token
-- [ ] Verify Content-Type is application/json
+### Teste 5.1: Criar Mensagem (Descentralizado)
+- [ ] Criar mensagem com Modo de Entrega: **Descentralizado**
+- [ ] Adicionar localização Wi-Fi com SSID
+- [ ] Submeter
+- [ ] Verificar mensagem armazenada com modo_entrega = "Descentralizado"
 
-### Test 10.2: Error Responses
-- [ ] Attempt API call with expired token
-- [ ] Verify 401 response and user logout
-- [ ] Attempt invalid data submission
-- [ ] Verify 400 response with validation errors
-- [ ] Attempt unauthorized access (e.g., delete another user's message)
-- [ ] Verify 403 response
-
-### Test 10.3: Database Integrity
-- [ ] Verify foreign key constraints (user_id references exist)
-- [ ] Verify no orphaned records after deletion
-- [ ] Verify transaction rollback if error occurs during multi-step operations
-
-### Test 10.4: Rate Limiting
-- [ ] Rapidly submit registration requests
-- [ ] Verify rate limit kicks in after threshold
-- [ ] Verify 429 (Too Many Requests) response
+### Teste 5.2: Recepção de Mensagem P2P (Manual)
+- [ ] Com mensagem em modo Descentralizado
+- [ ] Navegar para aba Nearby
+- [ ] Se outro dispositivo estiver próximo, deve aparecer em mensagens próximas
+- [ ] Verificar ação "Receive" funciona e registra entrega
+- [ ] Nota: Implementação completa Wi-Fi Direct P2P requer instalação de biblioteca (futuro)
 
 ---
 
-## Phase 11: Security Testing
+## Fase 6: Sistema de Notificações
 
-### Test 11.1: Password Storage
-- [ ] Hash in database should not be plaintext
-- [ ] Try logging in with hashed password (should fail)
-- [ ] Verify bcrypt or similar used
+### Teste 6.1: Visualizar Lista de Notificações
+- [ ] Criar e receber múltiplas mensagens como Usuário B
+- [ ] Navegar para aba Notifications
+- [ ] Verificar lista mostra todas mensagens recebidas/notificações
+- [ ] Verificar badge de contagem não lida aparece na aba
 
-### Test 11.2: CORS Configuration
-- [ ] Frontend on http://localhost:19006 should work
-- [ ] External domain requesting should be blocked
+### Teste 6.2: Marcar Notificação Única como Lida
+- [ ] Na tela Notifications, tocar em item de notificação
+- [ ] Verificar mudança visual (fade, checkmark, etc.)
+- [ ] Verificar marcado como lido no banco de dados (logs_mensagens.seen != NULL)
 
-### Test 11.3: Token Security
-- [ ] Token should expire after set time (e.g., 24 hours)
-- [ ] Token refresh mechanism (if implemented) should work
-- [ ] Logging out should invalidate token
+### Teste 6.3: Marcar Todas como Lidas
+- [ ] Com múltiplas notificações não lidas
+- [ ] Tocar botão "Mark All as Read"
+- [ ] Verificar todas notificações marcadas como lidas
+- [ ] Verificar badge de contagem reseta para 0
 
-### Test 11.4: SQL Injection
-- [ ] Try adding SQL characters in message content: `'; DROP TABLE users; --`
-- [ ] Verify message saved as-is, no SQL execution
-- [ ] Backend should escape/parameterize queries
-
----
-
-## Phase 12: Performance & Load Testing
-
-### Test 12.1: Startup Time
-- [ ] From cold start to login screen: < 3 seconds
-- [ ] From login to main app: < 2 seconds
-
-### Test 12.2: API Response Times
-- [ ] Message creation: < 1 second
-- [ ] Location list load: < 1 second
-- [ ] Notification sync: < 500ms
-
-### Test 12.3: Memory Usage
-- [ ] Monitor RAM while scrolling through long lists
-- [ ] Verify no memory leaks (RAM gradually increasing)
-- [ ] Verify memory released on navigation
-
-### Test 12.4: Concurrent Operations
-- [ ] Create message while location list loading
-- [ ] Switch between tabs rapidly
-- [ ] No crashes or errors
+### Teste 6.4: Excluir Notificação
+- [ ] Tocar ícone delete/trash na notificação
+- [ ] Confirmar exclusão no alerta
+- [ ] Verificar notificação removida da lista
+- [ ] Verificar ainda queryable no backend mas marcado como deletado
 
 ---
 
-## Phase 13: Wi-Fi Direct P2P (If Implemented)
+## Fase 7: Sistema Mule/Relay
 
-### Test 13.1: SSID Detection
-- [ ] Create Wi-Fi location with SSID from test AP
-- [ ] Verify SSID appears in nearby locations
-- [ ] Verify delivery possible to detected SSID
+### Teste 7.1: Registrar como Mule
+- [ ] Navegar para tela Mules
+- [ ] Tocar aba "Configuration"
+- [ ] Tocar "Register as Mule" ou botão similar
+- [ ] Definir capacidade: 20 mensagens
+- [ ] Tocar Save
+- [ ] Verificar entrada mula criada no banco de dados
+- [ ] Verificar capacidade armazenada
 
-### Test 13.2: P2P Message Transmission
-- [ ] Send message in Descentralizado mode with SSID
-- [ ] Connect second device to same SSID
-- [ ] Verify message appears in Nearby for second device
-- [ ] Verify delivery without backend involvement
+### Teste 7.2: Visualizar Atribuições Mule
+- [ ] Com Usuário A registrado como mule
+- [ ] Criar mensagem de Usuário C direcionada a localização distante
+- [ ] Sistema atribui mensagem para mule (Usuário A)
+- [ ] Como Usuário A, ir para tela Mules → aba Assignments
+- [ ] Verificar tarefa de atribuição listada
+- [ ] Verificar atribuição mostra título, localização, prioridade
 
-### Test 13.3: Range Testing
-- [ ] Test P2P at various distances (10m, 30m, 100m)
-- [ ] Verify connection drops at range limits
-- [ ] Verify connection re-established when in range
+### Teste 7.3: Aceitar Atribuição Mule
+- [ ] Tocar "Accept" na atribuição
+- [ ] Confirmar no alerta
+- [ ] Verificar atribuição removida da lista
+- [ ] Verificar entrega registrada em entregas_mensagens
+- [ ] Verificar status mudado em mulas_mensagens para "delivered"
 
----
+### Teste 7.4: Visualizar Estatísticas Mule
+- [ ] Como mule, ir para aba Configuration
+- [ ] Verificar cartão de estatísticas mostra:
+  - Atribuições totais
+  - Contagem entregue
+  - Contagem pendente
+  - Tempo médio de entrega (se disponível)
+- [ ] Verificar estatísticas correspondem a agregados do banco de dados
 
-## Phase 14: Device-Specific Testing
+### Teste 7.5: Atualizar Capacidade Mule
+- [ ] Mudar controle deslizante de capacidade para valor diferente
+- [ ] Tocar Save
+- [ ] Verificar capacidade atualizada no banco de dados
+- [ ] Logout e login → verificar persistido
 
-### Test 14.1: Android Testing
-- [ ] Test on Android 10, 12, 14 (various versions)
-- [ ] Verify permissions requested properly (location, contacts, camera)
-- [ ] Verify back button behavior
-- [ ] Verify hardware keyboard shortcuts (if any)
-
-### Test 14.2: iOS Testing (if applicable)
-- [ ] Test on iOS 15, 16, 17+
-- [ ] Verify permissions popup works
-- [ ] Verify home indicator doesn't interfere with UI
-- [ ] Verify notch/dynamic island compatibility
-
-### Test 14.3: Screen Size Variations
-- [ ] Test on small phone (5.5")
-- [ ] Test on large phone (6.5"+)
-- [ ] Test on tablet (if supported)
-- [ ] Verify no text cutoff or overlapping
-
----
-
-## Regression Testing (After Each Change)
-
-- [ ] All critical path tests (Auth → Create Message → Receive)
-- [ ] All offline scenarios
-- [ ] Mule accept flow
-- [ ] Notification updates
-- [ ] Navigation consistency
+### Teste 7.6: Cancelar Registro como Mule
+- [ ] Tocar botão "Remove" na aba Configuration
+- [ ] Confirmar no alerta
+- [ ] Verificar entrada mula deletada/desativada no banco de dados
+- [ ] Verificar não mais atribuições visíveis
 
 ---
 
-## Bug Reporting Template
+## Fase 8: Sistema de Fila Offline
 
-When bugs are found:
+### Teste 8.1: Criar Mensagem Quando Offline
+- [ ] Habilitar modo avião no dispositivo de teste
+- [ ] Navegar para tela Messages
+- [ ] Criar nova mensagem (todos campos válidos)
+- [ ] Submeter
+- [ ] Verificar alerta "Message queued" em vez de "Message created"
+- [ ] Verificar AsyncStorage contém mensagem enfileirada
+- [ ] Desabilitar modo avião
+- [ ] Verificar mensagem automaticamente enviada para backend
+- [ ] Verificar notificação "Offline sync" aparece
+
+### Teste 8.2: Criar Localização Quando Offline
+- [ ] Habilitar modo avião
+- [ ] Ir para tela Locations
+- [ ] Adicionar nova localização GPS
+- [ ] Tocar Submit
+- [ ] Verificar alerta "Location queued"
+- [ ] Desabilitar modo avião
+- [ ] Verificar localização sincronizada para backend
+
+### Teste 8.3: Lógica de Nova Tentativa de Fila
+- [ ] Enfileirar 3-5 mensagens quando offline
+- [ ] Voltar online
+- [ ] Verificar todas mensagens enfileiradas enviadas em lote
+- [ ] Verificar banco de dados mostra todas mensagens criadas
+- [ ] Verificar fila limpa do AsyncStorage
+
+### Teste 8.4: Prevenção de Duplicatas
+- [ ] Enfileirar mensagem quando offline
+- [ ] Voltar online (mensagem sincroniza)
+- [ ] Disparar sync manualmente novamente
+- [ ] Verificar duplicata não criada no banco de dados
+
+---
+
+## Fase 9: Testes UI/UX
+
+### Teste 9.1: Consistência de Tema
+- [ ] Navegar através de todas telas
+- [ ] Verificar esquema de cor consistente (laranja #FF6B35, cinzas)
+- [ ] Verificar tamanhos de texto legíveis
+- [ ] Verificar ícones claros e intuitivos
+
+### Teste 9.2: Navegação
+- [ ] Navegação por abas funcionando suavemente
+- [ ] Comportamento do botão back consistente
+- [ ] Modais abrem/fecham corretamente
+- [ ] Sem loops de navegação ou becos sem saída
+
+### Teste 9.3: Validação de Formulário
+- [ ] Todos campos de formulário validam antes de submissão
+- [ ] Mensagens de erro claras e acionáveis
+- [ ] Spinners de loading exibem durante chamadas de API
+- [ ] Botões desabilitados durante processamento
+
+### Teste 9.4: Performance de Lista
+- [ ] Listas rolam suavemente com muitos itens (100+)
+- [ ] Sem lag ou freezing
+- [ ] Pull-to-refresh funciona em todas telas de lista
+
+---
+
+## Fase 10: Testes API e Backend
+
+### Teste 10.1: Cabeçalhos de Solicitação API
+- [ ] Usar DevTools do navegador ou Charles Proxy para inspecionar solicitações API
+- [ ] Verificar cabeçalho Authorization contém token JWT válido
+- [ ] Verificar Content-Type é application/json
+
+### Teste 10.2: Respostas de Erro
+- [ ] Tentar chamada API com token expirado
+- [ ] Verificar resposta 401 e logout de usuário
+- [ ] Tentar submissão de dados inválidos
+- [ ] Verificar resposta 400 com erros de validação
+- [ ] Tentar acesso não autorizado (ex.: deletar mensagem de outro usuário)
+- [ ] Verificar resposta 403
+
+### Teste 10.3: Integridade do Banco de Dados
+- [ ] Verificar restrições de chave estrangeira (user_id references existem)
+- [ ] Verificar não há registros órfãos após exclusão
+- [ ] Verificar reversão de transação se erro ocorre durante operações multi-etapa
+
+### Teste 10.4: Limitação de Taxa
+- [ ] Submeter solicitações de registro rapidamente
+- [ ] Verificar limitação de taxa aciona após limite
+- [ ] Verificar resposta 429 (Too Many Requests)
+
+---
+
+## Fase 11: Testes de Segurança
+
+### Teste 11.1: Armazenamento de Senha
+- [ ] Hash no banco de dados não deve ser texto simples
+- [ ] Tentar fazer login com hash de senha (deve falhar)
+- [ ] Verificar bcrypt ou similar usado
+
+### Teste 11.2: Configuração CORS
+- [ ] Frontend em http://localhost:19006 deve funcionar
+- [ ] Domínio externo solicitando deve ser bloqueado
+
+### Teste 11.3: Segurança de Token
+- [ ] Token deve expirar após tempo definido (ex.: 24 horas)
+- [ ] Mecanismo de refresh de token (se implementado) deve funcionar
+- [ ] Logout deve invalidar token
+
+### Teste 11.4: Injeção SQL
+- [ ] Tentar adicionar caracteres SQL no conteúdo da mensagem: `'; DROP TABLE users; --`
+- [ ] Verificar mensagem salva como-é, sem execução SQL
+- [ ] Backend deve escapar/parametrizar queries
+
+---
+
+## Fase 12: Testes de Performance e Carga
+
+### Teste 12.1: Tempo de Inicialização
+- [ ] De inicialização a frio para tela de login: < 3 segundos
+- [ ] De login para app principal: < 2 segundos
+
+### Teste 12.2: Tempos de Resposta da API
+- [ ] Criação de mensagem: < 1 segundo
+- [ ] Carregamento de lista de localização: < 1 segundo
+- [ ] Sincronização de notificação: < 500ms
+
+### Teste 12.3: Uso de Memória
+- [ ] Monitorar RAM enquanto rola através de listas longas
+- [ ] Verificar sem vazamentos de memória (RAM gradualmente aumentando)
+- [ ] Verificar memória liberada na navegação
+
+### Teste 12.4: Operações Concorrentes
+- [ ] Criar mensagem enquanto carregamento de lista de localização
+- [ ] Alternar entre abas rapidamente
+- [ ] Sem crashes ou erros
+
+---
+
+## Fase 13: Wi-Fi Direct P2P (Se Implementado)
+
+### Teste 13.1: Detecção de SSID
+- [ ] Criar localização Wi-Fi com SSID de AP de teste
+- [ ] Verificar SSID aparece em localizações próximas
+- [ ] Verificar entrega possível para SSID detectado
+
+### Teste 13.2: Transmissão de Mensagem P2P
+- [ ] Enviar mensagem em modo Descentralizado com SSID
+- [ ] Conectar segundo dispositivo ao mesmo SSID
+- [ ] Verificar mensagem aparece em Nearby para segundo dispositivo
+- [ ] Verificar entrega sem envolvimento backend
+
+### Teste 13.3: Teste de Alcance
+- [ ] Testar P2P em várias distâncias (10m, 30m, 100m)
+- [ ] Verificar conexão cai nos limites de alcance
+- [ ] Verificar conexão restabelecida quando em alcance
+
+---
+
+## Fase 14: Testes Específicos de Dispositivo
+
+### Teste 14.1: Testes Android
+- [ ] Testar em Android 10, 12, 14 (várias versões)
+- [ ] Verificar permissões solicitadas adequadamente (localização, contatos, câmera)
+- [ ] Verificar comportamento do botão back
+- [ ] Verificar atalhos de teclado de hardware (se houver)
+
+### Teste 14.2: Testes iOS (se aplicável)
+- [ ] Testar em iOS 15, 16, 17+
+- [ ] Verificar popup de permissões funciona
+- [ ] Verificar indicador home não interfere com UI
+- [ ] Verificar compatibilidade notch/dynamic island
+
+### Teste 14.3: Variações de Tamanho de Tela
+- [ ] Testar em telefone pequeno (5.5")
+- [ ] Testar em telefone grande (6.5"+)
+- [ ] Testar em tablet (se suportado)
+- [ ] Verificar sem corte de texto ou sobreposição
+
+---
+
+## Testes de Regressão (Após Cada Mudança)
+
+- [ ] Todos testes de caminho crítico (Auth → Criar Mensagem → Receber)
+- [ ] Todos cenários offline
+- [ ] Fluxo de aceitação mule
+- [ ] Atualizações de notificação
+- [ ] Consistência de navegação
+
+---
+
+## Modelo de Relatório de Bug
+
+Quando bugs são encontrados:
 
 ```
-**Title**: [Component] Brief description of issue
+**Título**: [Componente] Breve descrição do problema
 
-**Severity**: Critical / High / Medium / Low
+**Severidade**: Crítico / Alto / Médio / Baixo
 
-**Steps to Reproduce**:
-1. Step 1
-2. Step 2
-3. Step 3
+**Passos para Reproduzir**:
+1. Passo 1
+2. Passo 2
+3. Passo 3
 
-**Expected Result**:
-What should happen
+**Resultado Esperado**:
+O que deveria acontecer
 
-**Actual Result**:
-What actually happened
+**Resultado Atual**:
+O que realmente aconteceu
 
-**Environment**:
-- Device: [iPhone 14 / Samsung S23 / etc]
-- OS Version: [iOS 17 / Android 14 / etc]
-- App Version: [1.0.0]
+**Ambiente**:
+- Dispositivo: [iPhone 14 / Samsung S23 / etc]
+- Versão OS: [iOS 17 / Android 14 / etc]
+- Versão App: [1.0.0]
 - Backend: [Local / Staging / Production]
 
-**Attachments**:
-- Screenshot / Video
-- Error log if available
+**Anexos**:
+- Screenshot / Vídeo
+- Log de erro se disponível
 ```
 
 ---
 
-## Sign-Off
+## Assinatura
 
-- QA Tester Name: ___________________
-- Date: ___________________
-- Overall Result: ☐ PASS  ☐ FAIL
-- Known Issues: _______________________________
-- Recommendations: _______________________________
+- Nome do Testador QA: ___________________
+- Data: ___________________
+- Resultado Geral: ☐ APROVADO  ☐ REPROVADO
+- Problemas Conhecidos: _______________________________
+- Recomendações: _______________________________
 
 ---
 
-**Testing Duration**: Estimated 4-6 hours for full QA cycle  
-**Last Updated**: January 2024
+**Duração de Testes**: Estimada 4-6 horas para ciclo completo de QA  
+**Última Atualização**: Janeiro 2024

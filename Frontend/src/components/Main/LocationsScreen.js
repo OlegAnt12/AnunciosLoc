@@ -159,7 +159,33 @@ export default function LocationsScreen({ user }) {
   useEffect(() => {
     loadLocations();
     initializeLocation();
+
+    // Monitor network connectivity for offline queue retry
+    const unsubscribe = NetInfo.addEventListener(state => {
+      if (state.isConnected) {
+        // Try to retry offline locations when coming back online
+        retryOfflineLocations();
+      }
+    });
+
+    return unsubscribe;
   }, []);
+
+  const retryOfflineLocations = async () => {
+    try {
+      const result = await offlineQueueService.retryOfflineLocations(locationService);
+      if (result.successful > 0) {
+        Alert.alert('Offline Sync', `${result.successful} locais enviados com sucesso.`);
+        // Refresh locations to show the newly sent ones
+        await loadLocations();
+      }
+      if (result.failed > 0) {
+        Alert.alert('Aviso', `${result.failed} locais falharam ao enviar. Tente novamente mais tarde.`);
+      }
+    } catch (error) {
+      console.error('Error retrying offline locations:', error);
+    }
+  };
 
   const initializeLocation = async () => {
     try {

@@ -1,22 +1,22 @@
-# AnunciosLoc - Feature Implementation Roadmap
+# AnunciosLoc - Roteiro de Implementação de Recursos
 
-## Overview
-This document tracks implementation status of all features across three project phases.
+## Visão Geral
+Este documento rastreia o status de implementação de todos os recursos em três fases do projeto.
 
 ---
 
-## Phase 1: Initial MVP Features ✅ COMPLETE
+## Fase 1: Recursos Iniciais MVP ✅ CONCLUÍDO
 
-### Authentication & User Management
-- [x] User registration (email, password, name)
-- [x] User login with JWT token
-- [x] Session persistence in AsyncStorage
-- [x] Token auto-injection in API headers
-- [x] Logout functionality
-- [x] Password hashing (bcrypt)
-- [x] Token expiration handling
+### Autenticação e Gerenciamento de Usuários
+- [x] Registro de usuário (email, senha, nome)
+- [x] Login de usuário com token JWT
+- [x] Persistência de sessão em AsyncStorage
+- [x] Injeção automática de token em cabeçalhos de API
+- [x] Funcionalidade de logout
+- [x] Hashing de senha (bcrypt)
+- [x] Tratamento de expiração de token
 
-**Status**: PRODUCTION READY
+**Status**: PRONTO PARA PRODUÇÃO
 
 ### Profile Management
 - [x] View user profile
