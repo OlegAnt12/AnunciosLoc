@@ -61,3 +61,5 @@ router.post('/push-token', protect, async (req, res) => {
     res.status(500).json({ success: false, message: 'Erro ao registrar push token' });
   }
 });
+
+module.exports = router;
