@@ -6,12 +6,13 @@
 2. [Visão Geral do Projeto](#visão-geral-do-projeto)
 3. [Arquitetura do Sistema](#arquitetura-do-sistema)
 4. [Status Atual da Implementação](#status-atual-da-implementação)
-5. [Tecnologias Utilizadas](#tecnologias-utilizadas)
-6. [Funcionalidades Implementadas](#funcionalidades-implementadas)
-7. [Desafios e Limitações](#desafios-e-limitações)
-8. [Próximos Passos](#próximos-passos)
-9. [Equipe e Contribuições](#equipe-e-contribuições)
-10. [Conclusão](#conclusão)
+5. [Status das Funcionalidades](#status-das-funcionalidades)
+6. [Tecnologias Utilizadas](#tecnologias-utilizadas)
+7. [Funcionalidades Implementadas](#funcionalidades-implementadas)
+8. [Desafios e Limitações](#desafios-e-limitações)
+9. [Próximos Passos](#próximos-passos)
+10. [Equipe e Contribuições](#equipe-e-contribuições)
+11. [Conclusão](#conclusão)
 
 ## Resumo Executivo
 
@@ -68,6 +69,25 @@ AnunciosLoc permite aos usuários criar e receber mensagens baseadas em localiza
 - ❌ Criptografia ponta-a-ponta
 - ❌ Painel de administração
 - ❌ Análises e relatórios
+
+## 8. Status das Funcionalidades
+
+| Funcionalidade | Status | Observações |
+|----------------|--------|-------------|
+| Registar utilizador | ✅ Completa | Implementado com validação e persistência |
+| Log in / out | ✅ Completa | JWT com persistência de sessão |
+| Listar / Criar / Remover locais | ✅ Completa | GPS e Wi-Fi SSID suportados |
+| Visualizar locais no mapa | 🔄 Parcialmente | Mencionado no wireframe, mapa integrado planejado |
+| Postar mensagens (Registar anúncios) | ✅ Completa | Com localização inline e políticas |
+| Remover anúncios | ✅ Completa | Apenas autor pode remover |
+| Ler/Visualizar anúncio | ✅ Completa | Listagem e visualização detalhada |
+| Guardar/levar anúncio | 🔄 Parcialmente | Recebimento implementado, salvar offline parcial |
+| Partilhar anúncio | ❌ Não implementada | Funcionalidade de compartilhamento não desenvolvida |
+| Editar perfil de utilizador | ✅ Completa | Visualização e edição de perfil |
+| Suporte a diferentes políticas | ✅ Completa | Lista Branca, Lista Negra, Pública |
+| Entrega de mensagem em modo centralizado | ✅ Completa | Via servidor com notificações |
+| Entrega de mensagem em modo descentralizado | 🔄 Parcialmente | Via mules e P2P, componentes implementados mas dependentes de bibliotecas |
+| Segurança | 🔄 Parcialmente | JWT e validação implementados, criptografia pendente |
 
 ## Tecnologias Utilizadas
 
