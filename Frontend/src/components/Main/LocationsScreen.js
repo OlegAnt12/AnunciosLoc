@@ -12,10 +12,12 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { locationService } from '../../services/api';
+import { offlineQueueService } from '../../services/offlineQueueService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -236,10 +238,27 @@ export default function LocationsScreen({ user }) {
         payload.coordenadas = newLocation.ssids || [];
       }
 
+      // Check network connectivity
+      const state = await NetInfo.fetch();
+      
       let result;
       if (editingId) {
+        // Edits always require network
+        if (!state.isConnected) {
+          Alert.alert('Offline', 'Edição de locais requer conexão à internet.');
+          return;
+        }
         result = await locationService.updateLocation(editingId, payload);
       } else {
+        // New locations can be queued
+        if (!state.isConnected) {
+          await offlineQueueService.queueLocation(payload);
+          Alert.alert('Offline', 'Local enfileirado. Será enviado quando estiver online.');
+          
+          setShowAddModal(false);
+          resetNewLocation();
+          return;
+        }
         result = await locationService.create(payload);
       }
 
