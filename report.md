@@ -87,7 +87,7 @@ AnunciosLoc permite aos usuários criar e receber mensagens baseadas em localiza
 | Suporte a diferentes políticas | ✅ Completa | Lista Branca, Lista Negra, Pública |
 | Entrega de mensagem em modo centralizado | ✅ Completa | Via servidor com notificações |
 | Entrega de mensagem em modo descentralizado | 🔄 Parcialmente | Via mules e P2P, componentes implementados mas dependentes de bibliotecas |
-| Roteamento de retransmissão | ✅ Completa | Algoritmo baseado em localização GPS/SSID, mules configuráveis, multi-hop via BLE |
+| Roteamento de retransmissão | ✅ Completa | Algoritmo baseado em localização GPS/SSID, mules configuráveis, multi-hop via . BLE |
 | Segurança | 🔄 Parcialmente | Criptografia básica implementada, chaves públicas pendentes |
 
 ### 1.1 Razões para Funcionalidades Parciais ou Não Implementadas
