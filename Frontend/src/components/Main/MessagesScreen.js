@@ -12,14 +12,17 @@ import {
   StyleSheet,
   ActivityIndicator
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
+import { Share } from 'react-native';
 import { messageService } from '../../../services/api';
 import { offlineQueueService } from '../../../services/offlineQueueService';
 
 export default function MessagesScreen({ user }) {
   const [activeTab, setActiveTab] = useState('sent');
   const [messages, setMessages] = useState([]);
+  const [savedMessages, setSavedMessages] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -51,6 +54,68 @@ export default function MessagesScreen({ user }) {
     return unsubscribe;
   }, [activeTab]);
 
+  const loadSavedMessages = async () => {
+    try {
+      const saved = await AsyncStorage.getItem('savedMessages');
+      if (saved) {
+        setSavedMessages(JSON.parse(saved));
+      } else {
+        setSavedMessages([]);
+      }
+    } catch (error) {
+      console.error('Error loading saved messages:', error);
+      setSavedMessages([]);
+    }
+  };
+
+  const saveMessage = async (message) => {
+    try {
+      const currentSaved = await AsyncStorage.getItem('savedMessages');
+      let savedArray = currentSaved ? JSON.parse(currentSaved) : [];
+      
+      // Check if already saved
+      const exists = savedArray.find(m => m.id === message.id);
+      if (exists) {
+        Alert.alert('Aviso', 'Mensagem já está guardada.');
+        return;
+      }
+      
+      savedArray.push(message);
+      await AsyncStorage.setItem('savedMessages', JSON.stringify(savedArray));
+      setSavedMessages(savedArray);
+      Alert.alert('Sucesso', 'Mensagem guardada com sucesso.');
+    } catch (error) {
+      console.error('Error saving message:', error);
+      Alert.alert('Erro', 'Falha ao guardar mensagem.');
+    }
+  };
+
+  const unsaveMessage = async (messageId) => {
+    try {
+      const currentSaved = await AsyncStorage.getItem('savedMessages');
+      let savedArray = currentSaved ? JSON.parse(currentSaved) : [];
+      savedArray = savedArray.filter(m => m.id !== messageId);
+      await AsyncStorage.setItem('savedMessages', JSON.stringify(savedArray));
+      setSavedMessages(savedArray);
+      Alert.alert('Sucesso', 'Mensagem removida dos guardados.');
+    } catch (error) {
+      console.error('Error unsaving message:', error);
+      Alert.alert('Erro', 'Falha ao remover mensagem.');
+    }
+  };
+
+  const shareMessage = async (message) => {
+    try {
+      const messageText = `${message.title}\n\n${message.content}\n\nLocal: ${message.location_name}\n\nCompartilhado via AnunciosLoc`;
+      await Share.share({
+        message: messageText,
+      });
+    } catch (error) {
+      console.error('Error sharing message:', error);
+      Alert.alert('Erro', 'Falha ao compartilhar mensagem.');
+    }
+  };
+
   const retryOfflineMessages = async () => {
     try {
       const result = await offlineQueueService.retryOfflineMessages(messageService);
@@ -71,6 +136,11 @@ export default function MessagesScreen({ user }) {
 
   const loadMessages = async () => {
     try {
+      if (activeTab === 'saved') {
+        await loadSavedMessages();
+        return;
+      }
+
       let result;
       if (activeTab === 'sent') {
         result = await messageService.getSentMessages(user.id);
@@ -311,7 +381,7 @@ export default function MessagesScreen({ user }) {
         <TouchableOpacity
           style={{ 
             flex: 1, 
-            padding: 16, 
+            padding: 12, 
             backgroundColor: activeTab === 'sent' ? '#FF6B35' : 'transparent',
             alignItems: 'center'
           }}
@@ -319,15 +389,16 @@ export default function MessagesScreen({ user }) {
         >
           <Text style={{ 
             color: activeTab === 'sent' ? '#FFF' : '#2D3436', 
-            fontWeight: '600' 
+            fontWeight: '600',
+            fontSize: 12
           }}>
-            Mensagens Enviadas
+            Enviadas
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={{ 
             flex: 1, 
-            padding: 16, 
+            padding: 12, 
             backgroundColor: activeTab === 'received' ? '#FF6B35' : 'transparent',
             alignItems: 'center'
           }}
@@ -335,15 +406,33 @@ export default function MessagesScreen({ user }) {
         >
           <Text style={{ 
             color: activeTab === 'received' ? '#FFF' : '#2D3436', 
-            fontWeight: '600' 
+            fontWeight: '600',
+            fontSize: 12
           }}>
-            Mensagens Recebidas
+            Recebidas
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={{ 
             flex: 1, 
-            padding: 16, 
+            padding: 12, 
+            backgroundColor: activeTab === 'saved' ? '#FF6B35' : 'transparent',
+            alignItems: 'center'
+          }}
+          onPress={() => setActiveTab('saved')}
+        >
+          <Text style={{ 
+            color: activeTab === 'saved' ? '#FFF' : '#2D3436', 
+            fontWeight: '600',
+            fontSize: 12
+          }}>
+            Guardadas
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{ 
+            flex: 1, 
+            padding: 12, 
             backgroundColor: activeTab === 'nearby' ? '#FF6B35' : 'transparent',
             alignItems: 'center'
           }}
@@ -351,7 +440,8 @@ export default function MessagesScreen({ user }) {
         >
           <Text style={{ 
             color: activeTab === 'nearby' ? '#FFF' : '#2D3436', 
-            fontWeight: '600' 
+            fontWeight: '600',
+            fontSize: 12
           }}>
             Próximas
           </Text>
@@ -366,7 +456,7 @@ export default function MessagesScreen({ user }) {
       >
         <View style={{ backgroundColor: '#FFF', borderRadius: 16, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3.84, elevation: 3 }}>
           <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#2D3436', marginBottom: 16 }}>
-            {activeTab === 'sent' ? 'Minhas Mensagens' : 'Mensagens Recebidas'}
+            {activeTab === 'sent' ? 'Minhas Mensagens' : activeTab === 'saved' ? 'Mensagens Guardadas' : 'Mensagens Recebidas'}
           </Text>
 
           {activeTab === 'sent' && (
@@ -375,15 +465,15 @@ export default function MessagesScreen({ user }) {
             </TouchableOpacity>
           )}
           
-          {messages.length === 0 ? (
+          {(activeTab === 'saved' ? savedMessages : messages).length === 0 ? (
             <View style={{ alignItems: 'center', padding: 20 }}>
-              <Icon name={activeTab === 'sent' ? "message-outline" : "message-text-outline"} size={48} color="#DFE6E9" />
+              <Icon name={activeTab === 'sent' ? "message-outline" : activeTab === 'saved' ? "bookmark-outline" : "message-text-outline"} size={48} color="#DFE6E9" />
               <Text style={{ color: '#636E72', textAlign: 'center', marginTop: 12 }}>
-                {activeTab === 'sent' ? 'Nenhuma mensagem enviada' : 'Nenhuma mensagem recebida'}
+                {activeTab === 'sent' ? 'Nenhuma mensagem enviada' : activeTab === 'saved' ? 'Nenhuma mensagem guardada' : 'Nenhuma mensagem recebida'}
               </Text>
             </View>
           ) : (
-            messages.map((message) => (
+            (activeTab === 'saved' ? savedMessages : messages).map((message) => (
               <View key={message.id} style={{ 
                 padding: 16, 
                 borderBottomWidth: 1, 
@@ -417,6 +507,23 @@ export default function MessagesScreen({ user }) {
                     <TouchableOpacity onPress={() => deleteMessage(message.id)}>
                       <Icon name="delete" size={18} color="#E17055" />
                     </TouchableOpacity>
+                  )}
+                  {activeTab === 'saved' && (
+                    <TouchableOpacity onPress={() => unsaveMessage(message.id)}>
+                      <Icon name="bookmark-remove" size={18} color="#E17055" />
+                    </TouchableOpacity>
+                  )}
+                  {(activeTab === 'received' || activeTab === 'nearby' || activeTab === 'saved') && (
+                    <View style={{ flexDirection: 'row' }}>
+                      <TouchableOpacity onPress={() => shareMessage(message)} style={{ marginRight: 8 }}>
+                        <Icon name="share-variant" size={18} color="#FF6B35" />
+                      </TouchableOpacity>
+                      {(activeTab === 'received' || activeTab === 'nearby') && (
+                        <TouchableOpacity onPress={() => saveMessage(message)}>
+                          <Icon name="bookmark-outline" size={18} color="#FF6B35" />
+                        </TouchableOpacity>
+                      )}
+                    </View>
                   )}
                 </View>
                 

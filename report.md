@@ -70,41 +70,41 @@ AnunciosLoc permite aos usuários criar e receber mensagens baseadas em localiza
 - ❌ Painel de administração
 - ❌ Análises e relatórios
 
-## 8. Status das Funcionalidades
+## 1. Status das Funcionalidades
 
 | Funcionalidade | Status | Observações |
 |----------------|--------|-------------|
 | Registar utilizador | ✅ Completa | Implementado com validação e persistência |
 | Log in / out | ✅ Completa | JWT com persistência de sessão |
 | Listar / Criar / Remover locais | ✅ Completa | GPS e Wi-Fi SSID suportados |
-| Visualizar locais no mapa | 🔄 Parcialmente | Mencionado no wireframe, mapa integrado planejado |
+| Visualizar locais no mapa | ✅ Completa | Implementado com react-native-maps, marcadores e círculos de raio |
 | Postar mensagens (Registar anúncios) | ✅ Completa | Com localização inline e políticas |
 | Remover anúncios | ✅ Completa | Apenas autor pode remover |
 | Ler/Visualizar anúncio | ✅ Completa | Listagem e visualização detalhada |
-| Guardar/levar anúncio | 🔄 Parcialmente | Recebimento implementado, salvar offline parcial |
-| Partilhar anúncio | ❌ Não implementada | Funcionalidade de compartilhamento não desenvolvida |
+| Guardar/levar anúncio | ✅ Completa | Implementado com AsyncStorage, aba dedicada e botões de guardar/remover |
+| Partilhar anúncio | ✅ Completa | Implementado com Share API nativa do React Native |
 | Editar perfil de utilizador | ✅ Completa | Visualização e edição de perfil |
 | Suporte a diferentes políticas | ✅ Completa | Lista Branca, Lista Negra, Pública |
 | Entrega de mensagem em modo centralizado | ✅ Completa | Via servidor com notificações |
 | Entrega de mensagem em modo descentralizado | 🔄 Parcialmente | Via mules e P2P, componentes implementados mas dependentes de bibliotecas |
-| Segurança | 🔄 Parcialmente | JWT e validação implementados, criptografia pendente |
+| Segurança | 🔄 Parcialmente | Criptografia básica implementada, chaves públicas pendentes |
 
-### 8.1 Razões para Funcionalidades Parciais ou Não Implementadas
+### 1.1 Razões para Funcionalidades Parciais ou Não Implementadas
 
 #### Visualizar locais no mapa (Parcialmente)
 - **Razão**: A funcionalidade foi planejada no wireframe da interface, mas a integração com mapas (ex.: Google Maps ou Mapbox) não foi implementada devido a limitações de tempo no MVP. Requer configuração de API keys e permissões adicionais.
 
-#### Guardar/levar anúncio (Parcialmente)
-- **Razão**: O recebimento de mensagens está completo, mas o "salvar" (armazenamento offline persistente para acesso posterior) foi parcialmente implementado apenas na fila offline. A funcionalidade completa de "bookmarking" ou armazenamento local dedicado não foi priorizada no escopo inicial.
+#### Guardar/levar anúncio (Completa)
+- **Implementação**: Adicionada aba "Guardadas" com armazenamento em AsyncStorage, botões de guardar/remover mensagens.
 
-#### Partilhar anúncio (Não implementada)
-- **Razão**: Não foi desenvolvida pois não estava no escopo mínimo viável do produto (MVP). Requer integração com APIs de compartilhamento nativas (ex.: Share API do React Native) e considerações de privacidade.
+#### Partilhar anúncio (Completa)
+- **Implementação**: Integrado com Share API do React Native para compartilhamento nativo de mensagens.
 
 #### Entrega de mensagem em modo descentralizado (Parcialmente)
 - **Razão**: Os componentes P2P (BLE e Wi-Fi Direct) foram criados com arquitetura completa, mas dependem de bibliotecas externas (react-native-ble-plx, react-native-wifi-p2p) que precisam ser instaladas manualmente. A implementação é funcional em código, mas requer configuração adicional no ambiente de produção.
 
 #### Segurança (Parcialmente)
-- **Razão**: Autenticação JWT e validação básica estão implementadas, mas criptografia ponta-a-ponta foi adiada para uma fase posterior devido à complexidade de gerenciamento de chaves públicas/privadas e impacto no desempenho.
+- **Razão**: Criptografia básica implementada com crypto-js, mas gerenciamento de chaves públicas ainda pendente para criptografia ponta-a-ponta completa.
 
 ## Tecnologias Utilizadas
 
