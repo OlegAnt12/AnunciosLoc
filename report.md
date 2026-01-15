@@ -89,6 +89,23 @@ AnunciosLoc permite aos usuários criar e receber mensagens baseadas em localiza
 | Entrega de mensagem em modo descentralizado | 🔄 Parcialmente | Via mules e P2P, componentes implementados mas dependentes de bibliotecas |
 | Segurança | 🔄 Parcialmente | JWT e validação implementados, criptografia pendente |
 
+### 8.1 Razões para Funcionalidades Parciais ou Não Implementadas
+
+#### Visualizar locais no mapa (Parcialmente)
+- **Razão**: A funcionalidade foi planejada no wireframe da interface, mas a integração com mapas (ex.: Google Maps ou Mapbox) não foi implementada devido a limitações de tempo no MVP. Requer configuração de API keys e permissões adicionais.
+
+#### Guardar/levar anúncio (Parcialmente)
+- **Razão**: O recebimento de mensagens está completo, mas o "salvar" (armazenamento offline persistente para acesso posterior) foi parcialmente implementado apenas na fila offline. A funcionalidade completa de "bookmarking" ou armazenamento local dedicado não foi priorizada no escopo inicial.
+
+#### Partilhar anúncio (Não implementada)
+- **Razão**: Não foi desenvolvida pois não estava no escopo mínimo viável do produto (MVP). Requer integração com APIs de compartilhamento nativas (ex.: Share API do React Native) e considerações de privacidade.
+
+#### Entrega de mensagem em modo descentralizado (Parcialmente)
+- **Razão**: Os componentes P2P (BLE e Wi-Fi Direct) foram criados com arquitetura completa, mas dependem de bibliotecas externas (react-native-ble-plx, react-native-wifi-p2p) que precisam ser instaladas manualmente. A implementação é funcional em código, mas requer configuração adicional no ambiente de produção.
+
+#### Segurança (Parcialmente)
+- **Razão**: Autenticação JWT e validação básica estão implementadas, mas criptografia ponta-a-ponta foi adiada para uma fase posterior devido à complexidade de gerenciamento de chaves públicas/privadas e impacto no desempenho.
+
 ## Tecnologias Utilizadas
 
 ### Backend
