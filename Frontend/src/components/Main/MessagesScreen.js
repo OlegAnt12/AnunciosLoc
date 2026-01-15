@@ -9,10 +9,13 @@ import {
   Modal,
   TextInput,
   Button,
-  StyleSheet
+  StyleSheet,
+  ActivityIndicator
 } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { messageService } from '../../../services/api';
+import { offlineQueueService } from '../../../services/offlineQueueService';
 
 export default function MessagesScreen({ user }) {
   const [activeTab, setActiveTab] = useState('sent');
@@ -152,6 +155,20 @@ export default function MessagesScreen({ user }) {
       if (payload.tipo_politica && !payload.policy_type) payload.policy_type = payload.tipo_politica;
 
       setCreating(true);
+
+      // Check network connectivity
+      const state = await NetInfo.fetch();
+      if (!state.isConnected) {
+        // Queue message for offline delivery
+        await offlineQueueService.queueMessage(payload);
+        Alert.alert('Offline', 'Mensagem enfileirada. Será enviada quando estiver online.');
+        
+        setShowCreateModal(false);
+        // reset form
+        setNewTitle(''); setNewContent(''); setSsids(['']); setLatitude(''); setLongitude(''); setRadiusM('500'); setNewLocationName(''); setPolicyRules([{ chave: '', valor: '' }]);
+        return;
+      }
+
       const result = await messageService.create(payload);
       if (result && result.success) {
         Alert.alert('Sucesso', 'Mensagem criada com sucesso');

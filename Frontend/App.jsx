@@ -9,6 +9,7 @@ import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { NotificationsProvider, useNotifications } from './src/contexts/NotificationsContext';
 import NotificationsScreen from './src/components/Main/NotificationsScreen';
+import { useOfflineSync } from './src/hooks/useOfflineSync';
 
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -42,6 +43,9 @@ const CustomLightTheme = {
 function MainTabs({ setShowCreateAd, isDarkMode }) {
   const { user, logout } = useAuth();
   const { count } = useNotifications();
+
+  // Enable offline sync for messages and locations
+  useOfflineSync();
 
   const handleLogout = () => {
     Alert.alert(
