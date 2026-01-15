@@ -22,6 +22,7 @@ import LocationsScreen from './src/components/Main/LocationsScreen';
 import ProfileScreen from './src/components/Main/ProfileScreen';
 import MessagesScreen from './src/components/Main/MessagesScreen';
 import MulesScreen from './src/components/Main/MulesScreen';
+import WiFiP2PComponent from './src/components/WiFiP2PComponent';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -153,6 +154,17 @@ function MainTabs({ setShowCreateAd, isDarkMode }) {
         }}
       >
         {(props) => <MulesScreen {...props} />}
+      </Tab.Screen>
+      
+      <Tab.Screen 
+        name="P2P"
+        options={{
+          tabBarIcon: ({ color, size, focused }) => (
+            <Icon name={focused ? 'message' : 'message-outline'} size={size} color={color} />
+          ),
+        }}
+      >
+        {(props) => <WiFiP2PComponent {...props} />}
       </Tab.Screen>
       
       <Tab.Screen 

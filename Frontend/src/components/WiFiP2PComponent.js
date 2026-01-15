@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, FlatList, Alert, PermissionsAndroid, Platform } from 'react-native';
+import { View, Text, Button, FlatList, Alert, PermissionsAndroid, Platform, TextInput } from 'react-native';
 // import WifiP2P from 'react-native-wifi-p2p'; // Uncomment when library is installed
+import { useAuth } from '../contexts/AuthContext';
 
 const WiFiP2PComponent = () => {
   const [peers, setPeers] = useState([]);
   const [isDiscovering, setIsDiscovering] = useState(false);
-  const [isWifiEnabled, setIsWifiEnabled] = useState(false);
+  const [connected, setConnected] = useState(false);
+  const [connectedPeer, setConnectedPeer] = useState(null);
+  const [receivedMessages, setReceivedMessages] = useState([]);
+  const [messageToSend, setMessageToSend] = useState('');
+  const { user } = useAuth();
 
   useEffect(() => {
     initializeWifiP2P();
@@ -84,6 +89,7 @@ const WiFiP2PComponent = () => {
       // await WifiP2P.connect(peer.deviceAddress);
 
       Alert.alert('Conectado', `Conectado a ${peer.deviceName}`);
+      setConnected(true);
       console.log('Connected to peer:', peer);
     } catch (error) {
       console.error('Error connecting to peer:', error);
@@ -104,14 +110,83 @@ const WiFiP2PComponent = () => {
     }
   };
 
+  const sharePublicProfile = async () => {
+    if (!connected || !connectedPeer || !user) {
+      Alert.alert('Erro', 'Não conectado ou usuário não autenticado');
+      return;
+    }
+
+    const publicProfile = {
+      id: user.id,
+      username: user.username,
+      location: user.location || null, // Assuming location is stored
+      timestamp: new Date().toISOString(),
+    };
+
+    try {
+      // Send profile to connected peer
+      await sendMessageToPeer(connectedPeer, JSON.stringify({
+        type: 'public_profile',
+        data: publicProfile
+      }));
+      Alert.alert('Sucesso', 'Perfil público compartilhado');
+    } catch (error) {
+      Alert.alert('Erro', 'Falha ao compartilhar perfil');
+    }
+  };
+
+  const shareMessage = async () => {
+    if (!connected || !connectedPeer || !user) {
+      Alert.alert('Erro', 'Não conectado ou usuário não autenticado');
+      return;
+    }
+
+    if (!messageToSend.trim()) {
+      Alert.alert('Erro', 'Digite uma mensagem para compartilhar');
+      return;
+    }
+
+    const messageData = {
+      id: Date.now(), // Simple ID for demo
+      senderId: user.id,
+      senderUsername: user.username,
+      content: messageToSend.trim(),
+      timestamp: new Date().toISOString(),
+      type: 'p2p_message'
+    };
+
+    try {
+      // Send message to connected peer
+      await sendMessageToPeer(connectedPeer, JSON.stringify(messageData));
+      Alert.alert('Sucesso', 'Mensagem compartilhada via P2P');
+      setMessageToSend(''); // Clear input
+    } catch (error) {
+      Alert.alert('Erro', 'Falha ao compartilhar mensagem');
+    }
+  };
+
+  const simulateReceiveMessage = () => {
+    // Simulate receiving a message for demo
+    const mockMessage = {
+      id: Date.now(),
+      senderId: 999,
+      senderUsername: 'PeerUser',
+      content: 'Olá! Esta é uma mensagem P2P simulada.',
+      timestamp: new Date().toISOString(),
+      type: 'p2p_message'
+    };
+    setReceivedMessages(prev => [...prev, mockMessage]);
+    Alert.alert('Mensagem Recebida', `Nova mensagem de ${mockMessage.senderUsername}`);
+  };
+
   return (
     <View style={{ flex: 1, padding: 20 }}>
       <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20 }}>
-        Wi-Fi Direct P2P - AnunciosLoc
+        Mensagens P2P - Wi-Fi Direct
       </Text>
 
       <Text style={{ marginBottom: 10 }}>
-        Status: {isWifiEnabled ? 'Wi-Fi P2P Ativo' : 'Wi-Fi P2P Inativo'}
+        Status: {connected ? 'Conectado' : 'Desconectado'}
       </Text>
 
       <Button
@@ -156,102 +231,79 @@ const WiFiP2PComponent = () => {
         )}
       />
 
-      <Text style={{ marginTop: 20, fontSize: 12, color: '#666' }}>
-        Nota: Esta é uma implementação placeholder. Instale 'react-native-wifi-p2p' para funcionalidade completa.
-      </Text>
-    </View>
-  );
-};
-
-export default WiFiP2PComponent;
-    // WifiP2P.stopPeerDiscovery();
-    setDiscovering(false);
-  };
-
-  const connectToPeer = async (peer) => {
-    try {
-      // Placeholder for connection
-      // await WifiP2P.connect(peer.deviceAddress);
-      Alert.alert('Conectado', `Conectado a ${peer.deviceName}`);
-      setConnected(true);
-    } catch (error) {
-      console.error('Error connecting to peer:', error);
-      Alert.alert('Erro', 'Falha ao conectar');
-    }
-  };
-
-  const sendMessage = async (message) => {
-    if (!connected) {
-      Alert.alert('Erro', 'Não conectado a nenhum dispositivo');
-      return;
-    }
-
-    try {
-      // Placeholder for sending message
-      // await WifiP2P.sendData(message);
-      Alert.alert('Sucesso', 'Mensagem enviada via Wi-Fi P2P');
-    } catch (error) {
-      console.error('Error sending message:', error);
-      Alert.alert('Erro', 'Falha ao enviar mensagem');
-    }
-  };
-
-  return (
-    <View style={{ flex: 1, padding: 20 }}>
-      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20 }}>
-        Wi-Fi Direct P2P - AnunciosLoc
-      </Text>
-
-      <Text style={{ marginBottom: 10 }}>
-        Status: {connected ? 'Conectado' : 'Desconectado'}
-      </Text>
-
-      <Button
-        title={discovering ? "Parar Descoberta" : "Iniciar Descoberta de Peers"}
-        onPress={discovering ? stopDiscovery : startDiscovery}
-      />
-
-      <Text style={{ marginTop: 20, marginBottom: 10 }}>
-        Peers descobertos: {peers.length}
-      </Text>
-
-      <FlatList
-        data={peers}
-        keyExtractor={(item) => item.deviceAddress}
-        renderItem={({ item }) => (
-          <View style={{
-            padding: 10,
-            borderBottomWidth: 1,
-            borderBottomColor: '#ccc',
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <View>
-              <Text style={{ fontWeight: 'bold' }}>
-                {item.deviceName}
-              </Text>
-              <Text>{item.deviceAddress}</Text>
-            </View>
-            <Button
-              title="Conectar"
-              onPress={() => connectToPeer(item)}
-            />
-          </View>
-        )}
-      />
-
       {connected && (
         <View style={{ marginTop: 20 }}>
-          <Button
-            title="Enviar Mensagem de Teste"
-            onPress={() => sendMessage('Olá via Wi-Fi P2P!')}
+          <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>
+            Compartilhar Mensagens P2P
+          </Text>
+          
+          <View style={{ marginTop: 15 }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 5 }}>
+              Digite sua mensagem:
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: '#ddd',
+                borderRadius: 8,
+                padding: 10,
+                marginBottom: 10,
+                backgroundColor: '#fff'
+              }}
+              placeholder="Digite sua mensagem..."
+              value={messageToSend}
+              onChangeText={setMessageToSend}
+              multiline
+              numberOfLines={3}
+            />
+            <Button
+              title="Enviar Mensagem P2P"
+              onPress={shareMessage}
+              disabled={!messageToSend.trim()}
+            />
+          </View>
+          
+          <View style={{ marginTop: 15 }}>
+            <Button
+              title="Simular Receber Mensagem"
+              onPress={simulateReceiveMessage}
+            />
+          </View>
+        </View>
+      )}
+
+      {receivedMessages.length > 0 && (
+        <View style={{ marginTop: 20 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>
+            Mensagens Recebidas P2P:
+          </Text>
+          <FlatList
+            data={receivedMessages}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <View style={{
+                padding: 10,
+                borderWidth: 1,
+                borderColor: '#ddd',
+                borderRadius: 8,
+                marginBottom: 10,
+                backgroundColor: '#f0f8ff'
+              }}>
+                <Text style={{ fontWeight: 'bold', color: '#FF6B35' }}>
+                  @{item.senderUsername}
+                </Text>
+                <Text style={{ marginTop: 5 }}>{item.content}</Text>
+                <Text style={{ fontSize: 12, color: '#666', marginTop: 5 }}>
+                  Recebido em: {new Date(item.timestamp).toLocaleString()}
+                </Text>
+              </View>
+            )}
           />
         </View>
       )}
 
       <Text style={{ marginTop: 20, fontSize: 12, color: '#666' }}>
-        Nota: Esta é uma implementação placeholder. Requer biblioteca react-native-wifi-p2p para funcionalidade completa.
+        Nota: Compartilhamento de mensagens P2P via Wi-Fi Direct. Instale 'react-native-wifi-p2p' para funcionalidade completa.
       </Text>
     </View>
   );
