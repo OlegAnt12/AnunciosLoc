@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services/api';
+import { API_BASE_URL } from '../services/api';
+import pushNotificationService from '../services/pushNotificationService';
 
 const AuthContext = createContext();
 
@@ -26,15 +28,48 @@ export const AuthProvider = ({ children }) => {
       const userData = await AsyncStorage.getItem('userData');
       const token = await AsyncStorage.getItem('userToken');
       
-      if (userData && token) {
-        const parsed = JSON.parse(userData);
-        // Normalizar se o backend meter user nested em data.user ou data
-        const normalizedUser = parsed.user || parsed;
-        setUser(normalizedUser);
-        setIsAuthenticated(true);
+      if (token) {
+        // Verify token with backend
+        try {
+          const response = await fetch(`${API_BASE_URL}/auth/verify`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              setUser(result.data);
+              setIsAuthenticated(true);
+              // Update stored user data
+              await AsyncStorage.setItem('userData', JSON.stringify(result.data));
+              
+              // Register for push notifications after authentication
+              setTimeout(() => {
+                pushNotificationService.registerForPushNotificationsAsync();
+              }, 1000);
+              
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error('Token verification failed:', error);
+        }
       }
+      
+      // If no token or verification failed, clear storage
+      await AsyncStorage.multiRemove(['userToken', 'userData']);
+      setUser(null);
+      setIsAuthenticated(false);
     } catch (error) {
       console.error('Error checking auth state:', error);
+      await AsyncStorage.multiRemove(['userToken', 'userData']);
+      setUser(null);
+      setIsAuthenticated(false);
     } finally {
       setLoading(false);
     }
@@ -53,6 +88,12 @@ export const AuthProvider = ({ children }) => {
           await AsyncStorage.setItem('userToken', result.data.token);
         }
         await AsyncStorage.setItem('userData', JSON.stringify(result.data));
+        
+        // Register for push notifications
+        setTimeout(() => {
+          pushNotificationService.registerForPushNotificationsAsync();
+        }, 1000);
+        
         return { success: true, data: normalized };
       } else {
         return { success: false, message: result.message };
@@ -74,6 +115,12 @@ export const AuthProvider = ({ children }) => {
           await AsyncStorage.setItem('userToken', result.data.token);
         }
         await AsyncStorage.setItem('userData', JSON.stringify(result.data));
+        
+        // Register for push notifications
+        setTimeout(() => {
+          pushNotificationService.registerForPushNotificationsAsync();
+        }, 1000);
+        
         return { success: true, data: normalized };
       } else {
         return { success: false, message: result.message };

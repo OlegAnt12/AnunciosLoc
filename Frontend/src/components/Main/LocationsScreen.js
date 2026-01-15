@@ -155,6 +155,9 @@ export default function LocationsScreen({ user }) {
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const [isTracking, setIsTracking] = useState(false);
+  const [locationSubscription, setLocationSubscription] = useState(null);
+  const [showCreateAdModal, setShowCreateAdModal] = useState(false);
+  const [selectedCoordinate, setSelectedCoordinate] = useState(null);
 
   useEffect(() => {
     loadLocations();
@@ -168,7 +171,12 @@ export default function LocationsScreen({ user }) {
       }
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      if (locationSubscription) {
+        locationSubscription.remove();
+      }
+    };
   }, []);
 
   const retryOfflineLocations = async () => {
@@ -198,6 +206,8 @@ export default function LocationsScreen({ user }) {
 
       const locationOptions = {
         accuracy: Location.Accuracy.Balanced,
+        timeInterval: 5000, // Update every 5 seconds
+        distanceInterval: 10, // Update every 10 meters
       };
 
       try {
@@ -210,6 +220,16 @@ export default function LocationsScreen({ user }) {
           latitude: currentLocation.coords.latitude,
           longitude: currentLocation.coords.longitude,
         }));
+
+        // Start watching position for real-time updates
+        const locationSubscription = await Location.watchPositionAsync(locationOptions, (location) => {
+          setUserLocation(location.coords);
+          console.log('Real-time location update:', location.coords);
+        });
+
+        // Store subscription for cleanup
+        setLocationSubscription(locationSubscription);
+
       } catch (error) {
         console.log('Error getting initial location:', error);
         setLocationError('Erro ao obter localização inicial');
@@ -344,14 +364,11 @@ export default function LocationsScreen({ user }) {
     }
   };
 
-  const handleMapPress = (event) => {
+  const handleMainMapPress = (event) => {
     const { coordinate } = event.nativeEvent;
     if (coordinate && coordinate.latitude && coordinate.longitude) {
-      setNewLocation(prev => ({
-        ...prev,
-        latitude: coordinate.latitude,
-        longitude: coordinate.longitude
-      }));
+      setSelectedCoordinate(coordinate);
+      setShowCreateAdModal(true);
     }
   };
 
@@ -443,6 +460,7 @@ export default function LocationsScreen({ user }) {
             <GoogleMapComponent 
               locations={locations}
               userLocation={userLocation}
+              onMapPress={handleMainMapPress}
               showControls={true}
             />
           </View>
@@ -787,6 +805,60 @@ export default function LocationsScreen({ user }) {
                 <Icon name="pencil" size={20} color="#FF6B35" />
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Criar Anúncio */}
+      <Modal
+        visible={showCreateAdModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCreateAdModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Criar Anúncio</Text>
+              <TouchableOpacity
+                onPress={() => setShowCreateAdModal(false)}
+                style={styles.closeButton}
+              >
+                <Icon name="close" size={24} color="#636E72" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.sectionTitle}>Localização Selecionada</Text>
+              <Text style={styles.coordinatesText}>
+                Latitude: {selectedCoordinate?.latitude?.toFixed(6)}
+              </Text>
+              <Text style={styles.coordinatesText}>
+                Longitude: {selectedCoordinate?.longitude?.toFixed(6)}
+              </Text>
+
+              <TouchableOpacity
+                style={styles.createAdButton}
+                onPress={() => {
+                  // Navigate to Messages screen to create ad
+                  // For now, just close modal and show alert
+                  setShowCreateAdModal(false);
+                  Alert.alert(
+                    'Criar Anúncio',
+                    'Redirecionando para criar anúncio nesta localização...',
+                    [
+                      { text: 'OK', onPress: () => {
+                        // Could navigate to MessagesScreen with pre-filled location
+                        // navigation.navigate('Mensagens', { selectedLocation: selectedCoordinate });
+                      }}
+                    ]
+                  );
+                }}
+              >
+                <Icon name="message-plus" size={20} color="#FFF" />
+                <Text style={styles.createAdButtonText}>Criar Anúncio Aqui</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -1298,5 +1370,25 @@ const styles = StyleSheet.create({
     color: '#636E72',
     fontSize: 12,
     textAlign: 'center',
+  },
+  createAdButton: {
+    backgroundColor: '#FF6B35',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  createAdButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  coordinatesText: {
+    fontSize: 14,
+    color: '#636E72',
+    marginBottom: 4,
   },
 });

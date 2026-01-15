@@ -1,10 +1,25 @@
 const locationService = require('../services/locationService');
 const db = require('../config/database');
+const pushNotificationService = require('../services/pushNotificationService');
 
 const locationController = {
   async createLocation(req, res) {
     try {
       const id = await locationService.createLocation(req.body, req.userId);
+      
+      // Send notification to user about successful location creation
+      setTimeout(async () => {
+        try {
+          await pushNotificationService.notifyUserAction(
+            req.userId,
+            'Local Criado',
+            'Seu local foi adicionado com sucesso!'
+          );
+        } catch (error) {
+          console.error('Error sending location creation notification:', error);
+        }
+      }, 1000);
+      
       res.status(201).json({ success: true, message: 'Local criado', data: { id } });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message || 'Erro ao criar local' });

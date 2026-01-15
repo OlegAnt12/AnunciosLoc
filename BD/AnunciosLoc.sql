@@ -22,7 +22,9 @@ CREATE TABLE utilizadores (
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ativo BOOLEAN DEFAULT TRUE
+    ativo BOOLEAN DEFAULT TRUE,
+    push_token VARCHAR(255) NULL,
+    ultima_notificacao_lida INT DEFAULT 0
 );
 
 -- Tabela de sessões

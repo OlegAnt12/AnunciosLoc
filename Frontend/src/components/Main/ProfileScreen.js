@@ -9,7 +9,7 @@ import {
   TextInput,
 } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
-import { profileService, messageService, locationService } from '../services/api';
+import { profileService, messageService, locationService } from '../../services/api';
 
 export default function ProfileScreen({ user, onLogout }) {
   const [profileData, setProfileData] = useState(user);

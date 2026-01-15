@@ -1,10 +1,25 @@
 const messageService = require('../services/messageService');
 const db = require('../config/database');
+const pushNotificationService = require('../services/pushNotificationService');
 
 const messageController = {
   async createMessage(req, res) {
     try {
       const messageId = await messageService.createMessage(req.body, req.userId);
+      
+      // Send notification to user about successful message creation
+      setTimeout(async () => {
+        try {
+          await pushNotificationService.notifyUserAction(
+            req.userId,
+            'Mensagem Criada',
+            'Sua mensagem foi publicada com sucesso!'
+          );
+        } catch (error) {
+          console.error('Error sending message creation notification:', error);
+        }
+      }, 1000);
+      
       res.status(201).json({ success: true, message: 'Mensagem criada com sucesso', data: { id: messageId } });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message || 'Erro ao criar mensagem' });

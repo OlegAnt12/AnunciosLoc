@@ -46,4 +46,18 @@ router.delete('/key', protect, async (req, res) => {
   }
 });
 
-module.exports = router;
+// @desc    Registrar token de push notification
+// @route   POST /api/profiles/push-token
+// @access  Private
+router.post('/push-token', protect, async (req, res) => {
+  try {
+    const { pushToken } = req.body;
+    if (!pushToken) return res.status(400).json({ success: false, message: 'Push token é obrigatório' });
+
+    const db = require('../config/database');
+    await db.query('UPDATE utilizadores SET push_token = ? WHERE id = ?', [pushToken, req.userId]);
+    res.json({ success: true, message: 'Push token registrado' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Erro ao registrar push token' });
+  }
+});

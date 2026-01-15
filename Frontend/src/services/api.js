@@ -29,6 +29,8 @@ const getBaseURL = () => {
 const API_BASE_URL = getBaseURL();
 console.log('🎯 URL Base da API:', API_BASE_URL);
 
+export { API_BASE_URL };
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 45000,

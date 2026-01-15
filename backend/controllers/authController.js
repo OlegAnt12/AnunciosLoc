@@ -1,11 +1,25 @@
 const authService = require('../services/authService');
 const { generateToken } = require('../utils/auth');
+const pushNotificationService = require('../services/pushNotificationService');
 
 const register = async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await authService.registerUser(username, password);
     const token = generateToken(user.id);
+
+    // Send welcome push notification
+    setTimeout(async () => {
+      try {
+        await pushNotificationService.notifyUserAction(
+          user.id,
+          'Bem-vindo ao AnunciosLoc!',
+          'Obrigado por se registar. Explore anúncios na sua localização!'
+        );
+      } catch (error) {
+        console.error('Error sending welcome notification:', error);
+      }
+    }, 2000); // Delay to allow push token registration
 
     res.status(201).json({
       success: true,

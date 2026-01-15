@@ -16,8 +16,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { Share } from 'react-native';
-import { messageService } from '../../../services/api';
-import { offlineQueueService } from '../../../services/offlineQueueService';
+import { messageService } from '../../services/api';
+import { offlineQueueService } from '../../services/offlineQueueService';
 
 export default function MessagesScreen({ user }) {
   const [activeTab, setActiveTab] = useState('sent');

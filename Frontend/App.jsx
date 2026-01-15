@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { NotificationsProvider, useNotifications } from './src/contexts/NotificationsContext';
 import NotificationsScreen from './src/components/Main/NotificationsScreen';
 import { useOfflineSync } from './src/hooks/useOfflineSync';
+import pushNotificationService from './src/services/pushNotificationService';
 
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -226,6 +227,19 @@ export default function App() {
 
   useEffect(() => {
     loadThemePreference();
+    
+    // Set up push notification listeners
+    const { notificationListener, responseListener } = pushNotificationService.setupNotificationListener();
+    
+    // Cleanup listeners on unmount
+    return () => {
+      if (notificationListener) {
+        notificationListener.remove();
+      }
+      if (responseListener) {
+        responseListener.remove();
+      }
+    };
   }, []);
 
   const loadThemePreference = async () => {

@@ -1,8 +1,13 @@
 const db = require('../config/database');
+const pushNotificationService = require('./pushNotificationService');
 
 class NotificationService {
   async notifyNewMessage(messageId, locationId) {
     try {
+      // Get message details
+      const [messageRows] = await db.query('SELECT titulo FROM mensagens WHERE id = ?', [messageId]);
+      const messageTitle = messageRows.length > 0 ? messageRows[0].titulo : 'Nova mensagem';
+
       // Encontrar utilizadores que estão atualmente no local
       const [usersInLocation] = await db.query(`
         SELECT DISTINCT lu.utilizador_id
@@ -14,9 +19,10 @@ class NotificationService {
         )
       `, [locationId]);
 
-      // Em produção, aqui enviaríamos push notifications
-      // Para a versão intermédia, apenas registamos no log
+      // Send push notifications
+      const pushCount = await pushNotificationService.notifyNewMessage(messageId, locationId, messageTitle);
       
+      // Also log in database for history
       for (const user of usersInLocation) {
         await db.query(
           'INSERT INTO logs_mensagens (mensagem_id, acao, utilizador_id, detalhes) VALUES (?, ?, ?, ?)',
@@ -24,7 +30,7 @@ class NotificationService {
         );
       }
 
-      console.log(`🔔 Notificações enviadas para ${usersInLocation.length} utilizadores no local ${locationId}`);
+      console.log(`🔔 Notificações enviadas para ${usersInLocation.length} utilizadores no local ${locationId}, push: ${pushCount}`);
       
       return usersInLocation.length;
     } catch (error) {

@@ -9,7 +9,7 @@ import {
 import MapView, { Marker, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
-import { locationService } from '../services/api';
+import { locationService } from '../../services/api';
 
 const { width, height } = Dimensions.get('window');
 
