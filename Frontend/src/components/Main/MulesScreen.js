@@ -6,9 +6,13 @@ import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 export default function MulesScreen() {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [config, setConfig] = useState(null);
+  const [capacity, setCapacity] = useState(10);
+  const [active, setActive] = useState(true);
 
   useEffect(() => {
     loadAssignments();
+    loadConfig();
   }, []);
 
   const loadAssignments = async () => {
@@ -21,6 +25,21 @@ export default function MulesScreen() {
       Alert.alert('Erro', error.message || 'Falha ao carregar atribuições');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadConfig = async () => {
+    try {
+      const res = await muleService.getConfig();
+      if (res && res.success) {
+        setConfig(res.data || null);
+        if (res.data) {
+          setCapacity(res.data.capacity || 10);
+          setActive(res.data.ativo !== undefined ? res.data.ativo : true);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao obter config:', error);
     }
   };
 
@@ -37,6 +56,37 @@ export default function MulesScreen() {
         } catch (error) {
           console.error('Erro ao aceitar:', error);
           Alert.alert('Erro', error.message || 'Falha ao aceitar atribuição');
+        }
+      }}
+    ]);
+  };
+
+  const saveConfig = async () => {
+    try {
+      const res = await muleService.updateConfig({ capacity: parseInt(capacity, 10), active });
+      if (res && res.success) {
+        Alert.alert('Sucesso', 'Configuração de mula atualizada');
+        loadConfig();
+      }
+    } catch (error) {
+      console.error('Erro ao salvar config:', error);
+      Alert.alert('Erro', error.message || 'Falha ao salvar configuração');
+    }
+  };
+
+  const unregister = async () => {
+    Alert.alert('Remover configuração', 'Deseja remover a configuração de mula?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Remover', style: 'destructive', onPress: async () => {
+        try {
+          const res = await muleService.unregister();
+          if (res && res.success) {
+            Alert.alert('Sucesso', 'Configuração removida');
+            setConfig(null); setCapacity(10); setActive(true);
+          }
+        } catch (error) {
+          console.error('Erro ao remover config:', error);
+          Alert.alert('Erro', error.message || 'Falha ao remover configuração');
         }
       }}
     ]);

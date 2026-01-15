@@ -65,6 +65,28 @@ class MuleService {
       return { assignmentId: assignmentId, mensagemId: assignment.mensagem_id };
     });
   }
+
+  // Get or create/update mule config
+  async getConfigForUser(mulaUserId) {
+    const [rows] = await db.execute('SELECT utilizador_id as user_id, espaco_maximo_mensagens as capacity, ativo FROM config_mulas WHERE utilizador_id = ?', [mulaUserId]);
+    return rows[0] || null;
+  }
+
+  async upsertConfig(mulaUserId, capacity = 10, active = true) {
+    const [existing] = await db.execute('SELECT id FROM config_mulas WHERE utilizador_id = ?', [mulaUserId]);
+    if (existing.length === 0) {
+      const [result] = await db.execute('INSERT INTO config_mulas (utilizador_id, espaco_maximo_mensagens, ativo) VALUES (?, ?, ?)', [mulaUserId, capacity, active]);
+      return { id: result.insertId, utilizador_id: mulaUserId, capacity, active };
+    } else {
+      await db.execute('UPDATE config_mulas SET espaco_maximo_mensagens = ?, ativo = ? WHERE utilizador_id = ?', [capacity, active, mulaUserId]);
+      return { id: existing[0].id, utilizador_id: mulaUserId, capacity, active };
+    }
+  }
+
+  async removeConfig(mulaUserId) {
+    const [result] = await db.execute('DELETE FROM config_mulas WHERE utilizador_id = ?', [mulaUserId]);
+    return result.affectedRows > 0;
+  }
 }
 
 module.exports = new MuleService();

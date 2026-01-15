@@ -210,6 +210,8 @@ export default function LocationsScreen({ user }) {
     }
   };
 
+  const [editingId, setEditingId] = useState(null);
+
   const handleAddLocation = async () => {
     if (!newLocation.name || !newLocation.name.trim()) {
       Alert.alert('Erro', 'Por favor, insira um nome para o local');
@@ -217,27 +219,40 @@ export default function LocationsScreen({ user }) {
     }
 
     try {
-      const locationData = {
-        name: newLocation.name.trim(),
-        type: newLocation.type,
-        latitude: newLocation.latitude,
-        longitude: newLocation.longitude,
-        radius: newLocation.radius,
-        wifi_ssid: newLocation.wifi_ssid,
-        created_by: user.id
+      // Map to backend shape
+      const payload = {
+        nome: newLocation.name.trim(),
+        descricao: newLocation.description || null,
+        tipo: newLocation.type === 'gps' ? 'GPS' : 'WIFI',
       };
 
-      const result = await locationService.create(locationData);
-      
+      if (payload.tipo === 'GPS') {
+        payload.coordenadas = {
+          latitude: newLocation.latitude,
+          longitude: newLocation.longitude,
+          raio_metros: newLocation.radius
+        };
+      } else {
+        payload.coordenadas = newLocation.ssids || [];
+      }
+
+      let result;
+      if (editingId) {
+        result = await locationService.updateLocation(editingId, payload);
+      } else {
+        result = await locationService.create(payload);
+      }
+
       if (result.success) {
-        setLocations(prev => [...prev, result.data]);
+        await loadLocations();
         setShowAddModal(false);
+        setEditingId(null);
         resetNewLocation();
-        Alert.alert('Sucesso', 'Local adicionado com sucesso!');
+        Alert.alert('Sucesso', editingId ? 'Local actualizado com sucesso!' : 'Local adicionado com sucesso!');
       }
     } catch (error) {
-      console.log('Error adding location:', error);
-      Alert.alert('Erro', error.message || 'Não foi possível adicionar o local');
+      console.log('Error adding/updating location:', error);
+      Alert.alert('Erro', error.message || 'Não foi possível adicionar/atualizar o local');
     }
   };
 
@@ -298,12 +313,14 @@ export default function LocationsScreen({ user }) {
   const resetNewLocation = () => {
     setNewLocation({
       name: '',
+      description: '',
       type: 'gps',
       latitude: userLocation ? userLocation.latitude : DEFAULT_REGION.latitude,
       longitude: userLocation ? userLocation.longitude : DEFAULT_REGION.longitude,
       radius: 50,
-      wifi_ssid: null
+      ssids: []
     });
+    setEditingId(null);
   };
 
   const useCurrentLocation = () => {
@@ -489,6 +506,57 @@ export default function LocationsScreen({ user }) {
                   placeholderTextColor="#636E72"
                 />
 
+                <View style={{ flexDirection: 'row', marginTop: 12, marginBottom: 8, alignItems: 'center' }}>
+                  <TouchableOpacity
+                    style={[styles.typeButton, newLocation.type === 'gps' && styles.typeButtonActive]}
+                    onPress={() => setNewLocation({ ...newLocation, type: 'gps' })}
+                  >
+                    <Text style={[styles.typeButtonText, newLocation.type === 'gps' && styles.typeButtonTextActive]}>GPS</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.typeButton, newLocation.type === 'wifi' && styles.typeButtonActive, { marginLeft: 8 }]}
+                    onPress={() => setNewLocation({ ...newLocation, type: 'wifi' })}
+                  >
+                    <Text style={[styles.typeButtonText, newLocation.type === 'wifi' && styles.typeButtonTextActive]}>WIFI</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {newLocation.type === 'wifi' && (
+                  <View style={{ marginBottom: 12 }}>
+                    <Text style={{ color: '#636E72', marginBottom: 8, fontWeight: '600' }}>SSIDs (Wi‑Fi)</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <TextInput
+                        style={{ flex: 1, borderWidth: 1, borderColor: '#DFE6E9', borderRadius: 8, padding: 12, fontSize: 16, backgroundColor: '#FFF' }}
+                        placeholder="Inserir SSID"
+                        placeholderTextColor="#999"
+                        value={newLocation._ssidTemp || ''}
+                        onChangeText={(text) => setNewLocation({ ...newLocation, _ssidTemp: text })}
+                      />
+                      <TouchableOpacity
+                        style={{ marginLeft: 8, backgroundColor: '#FF6B35', padding: 12, borderRadius: 8 }}
+                        onPress={() => {
+                          const v = (newLocation._ssidTemp || '').trim();
+                          if (!v) return;
+                          setNewLocation(prev => ({ ...prev, ssids: [...(prev.ssids || []), v], _ssidTemp: '' }));
+                        }}
+                      >
+                        <Text style={{ color: '#FFF', fontWeight: '600' }}>Adicionar</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
+                      {(newLocation.ssids || []).map((s, idx) => (
+                        <View key={idx} style={{ backgroundColor: '#F1F2F6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, marginRight: 8, marginBottom: 8, flexDirection: 'row', alignItems: 'center' }}>
+                          <Text style={{ marginRight: 8, color: '#2D3436' }}>{s}</Text>
+                          <TouchableOpacity onPress={() => setNewLocation(prev => ({ ...prev, ssids: prev.ssids.filter(x => x !== s) }))}>
+                            <Icon name="close" size={16} color="#636E72" />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>Posição no Mapa</Text>
                   <TouchableOpacity 
@@ -577,7 +645,7 @@ export default function LocationsScreen({ user }) {
                 style={styles.confirmButton}
                 onPress={handleAddLocation}
               >
-                <Text style={styles.confirmButtonText}>Adicionar Local</Text>
+                <Text style={styles.confirmButtonText}>{editingId ? 'Atualizar Local' : 'Adicionar Local'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -643,6 +711,35 @@ export default function LocationsScreen({ user }) {
               >
                 <Icon name="google-maps" size={20} color="#FFF" />
                 <Text style={styles.mapsButtonText}>Abrir no Google Maps</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.mapsButton, { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#DFE6E9', marginLeft: 8 }]}
+                onPress={() => {
+                  // Start edit flow
+                  if (!selectedLocation) return;
+                  const loc = selectedLocation;
+                  const tipo = (loc.tipo || loc.type || 'GPS').toString().toUpperCase();
+                  const isWifi = tipo === 'WIFI';
+
+                  const coords = loc.coordenadas || {};
+                  const ssids = Array.isArray(coords) ? coords.map(c => (c.ssid || c)) : (loc.ssids || []);
+
+                  setNewLocation({
+                    name: loc.nome || loc.name || '',
+                    description: loc.descricao || loc.description || '',
+                    type: isWifi ? 'wifi' : 'gps',
+                    latitude: (coords && coords.latitude) || loc.latitude || DEFAULT_REGION.latitude,
+                    longitude: (coords && coords.longitude) || loc.longitude || DEFAULT_REGION.longitude,
+                    radius: (coords && coords.raio_metros) || loc.radius || 50,
+                    ssids: ssids || [],
+                    _ssidTemp: ''
+                  });
+                  setEditingId(loc.id);
+                  setShowDetailModal(false);
+                  setShowAddModal(true);
+                }}
+              >
+                <Icon name="pencil" size={20} color="#FF6B35" />
               </TouchableOpacity>
             </View>
           </View>

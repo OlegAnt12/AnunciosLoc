@@ -38,6 +38,34 @@ export default function NotificationsScreen() {
     }
   };
 
+  const handleMarkItem = async (item) => {
+    try {
+      await notificationService.markAsRead(item.id);
+      await load();
+      refreshCount();
+    } catch (error) {
+      console.error('Erro ao marcar notificação:', error);
+      Alert.alert('Erro', 'Não foi possível marcar como lida');
+    }
+  };
+
+  const handleDeleteItem = async (item) => {
+    Alert.alert('Eliminar notificação', 'Tem a certeza que pretende remover esta notificação?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Eliminar', style: 'destructive', onPress: async () => {
+        try {
+          await notificationService.deleteNotification(item.id);
+          await load();
+          refreshCount();
+          Alert.alert('Sucesso', 'Notificação removida');
+        } catch (error) {
+          console.error('Erro ao remover notificação:', error);
+          Alert.alert('Erro', 'Não foi possível remover a notificação');
+        }
+      }}
+    ]);
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.item}>
       <View style={styles.itemLeft}>
@@ -47,7 +75,17 @@ export default function NotificationsScreen() {
           <Text style={styles.details}>{item.detalhes || ''}</Text>
         </View>
       </View>
-      <Text style={styles.time}>{item.timestamp}</Text>
+      <View style={{ alignItems: 'flex-end' }}>
+        <Text style={styles.time}>{item.timestamp}</Text>
+        <View style={{ flexDirection: 'row', marginTop: 8 }}>
+          <TouchableOpacity onPress={() => handleMarkItem(item)} style={{ marginRight: 8 }}>
+            <Text style={{ color: '#2D3436', fontWeight: '600' }}>Marcar como lida</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleDeleteItem(item)}>
+            <Icon name="delete" size={18} color="#E17055" />
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 
