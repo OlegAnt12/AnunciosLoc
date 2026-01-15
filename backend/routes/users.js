@@ -64,6 +64,6 @@ router.get('/', require('../middleware/auth').protect, userController.getAllUser
 router.get('/:id', require('../middleware/auth').protect, userController.getUserById);
 router.post('/', require('../middleware/auth').protect, userController.createUser);
 router.put('/:id', require('../middleware/auth').protect, userController.updateUser);
-router.delete('/:id', require('../middleware/auth').protect, userController.deleteUser;
+router.delete('/:id', require('../middleware/auth').protect, userController.deleteUser);
 
 module.exports = router;

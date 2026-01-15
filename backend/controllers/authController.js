@@ -73,9 +73,26 @@ const refreshToken = async (req, res) => {
   }
 };
 
+const verifyToken = async (req, res) => {
+  try {
+    // If we reach here, token is valid due to protect middleware
+    const user = await authService.getUserById(req.user.id);
+    res.json({
+      success: true,
+      data: {
+        id: user.id,
+        username: user.username
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Erro ao verificar token' });
+  }
+};
+
 module.exports = {
   register,
   login,
   logout,
-  refreshToken
+  refreshToken,
+  verifyToken
 };

@@ -36,8 +36,21 @@ describe('Auth API', () => {
     expect(response.body.data).toHaveProperty('token');
   });
 
-  test('Protected route with token should return profile (empty)', async () => {
-    const res = await request(app).get('/api/profiles/me').set('Authorization', `Bearer ${authToken}`);
-    expect([200, 404]).toContain(res.status);
+  test('GET /api/auth/verify - should verify token and return user data', async () => {
+    const response = await request(app)
+      .get('/api/auth/verify')
+      .set('Authorization', `Bearer ${authToken}`);
+    
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data).toHaveProperty('id');
+    expect(response.body.data).toHaveProperty('username');
   });
-});
+
+  test('GET /api/auth/verify - should fail with invalid token', async () => {
+    const response = await request(app)
+      .get('/api/auth/verify')
+      .set('Authorization', 'Bearer invalidtoken');
+    
+    expect(response.status).toBe(401);
+  });
