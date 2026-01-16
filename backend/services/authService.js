@@ -4,7 +4,7 @@ const { generateSessionId } = require('../utils/auth');
 const config = require('../config/environment');
 
 class AuthService {
-  async registerUser(username, password) {
+  async registerUser(username, password, email = null) {
     // Validações
     if (!username || !password) {
       throw new Error('Username e password são obrigatórios');
@@ -44,9 +44,17 @@ class AuthService {
         [result.insertId, 'data_registo', new Date().toISOString()]
       );
 
+      if (email) {
+        await connection.execute(
+          'INSERT INTO perfis_utilizador (utilizador_id, chave, valor) VALUES (?, ?, ?)',
+          [result.insertId, 'email', email]
+        );
+      }
+
       return {
         id: result.insertId,
-        username: username
+        username: username,
+        email: email
       };
     });
   }
@@ -56,11 +64,13 @@ class AuthService {
       throw new Error('Username e password são obrigatórios');
     }
 
-    // Buscar utilizador
-    const [users] = await db.query(
-      'SELECT id, username, password_hash, ativo FROM utilizadores WHERE username = ?',
-      [username]
-    );
+    // Buscar utilizador e email
+    const [users] = await db.query(`
+      SELECT u.id, u.username, u.password_hash, u.ativo, u.push_token, p.valor as email
+      FROM utilizadores u
+      LEFT JOIN perfis_utilizador p ON u.id = p.utilizador_id AND p.chave = 'email'
+      WHERE u.username = ?
+    `, [username]);
 
     if (users.length === 0) {
       throw new Error('Credenciais inválidas');
@@ -96,7 +106,9 @@ class AuthService {
     return {
       user: {
         id: user.id,
-        username: user.username
+        username: user.username,
+        email: user.email,
+        push_token: user.push_token
       },
       sessionId,
       expiresAt: expiration

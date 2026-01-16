@@ -6,13 +6,15 @@ import { Platform } from 'react-native';
 const getBaseURL = () => {
   if (__DEV__) {
     console.log('🔄 Modo desenvolvimento - Configurando URL base...');
+    console.log('📱 Plataforma detectada:', Platform.OS);
     
     if (Platform.OS === 'android') {
       const androidURLs = [
-        'http://10.0.2.2:3000/api',
+        'http://10.0.2.2:3000/api', // Emulador Android
         'http://localhost:3000/api',
         'http://192.168.1.100:3000/api'
       ];
+      console.log('🤖 Usando URL para Android:', androidURLs[0]);
       return androidURLs[0];
     } else {
       const iosURLs = [

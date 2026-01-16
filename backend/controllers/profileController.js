@@ -24,14 +24,14 @@ const profileController = {
   async updateProfile(req, res) {
     try {
       const userId = req.userId;
-      const { profile = {} } = req.body; // expect { key: value }
+      const profileData = req.body; // expect direct key-value pairs
 
       // Ensure user exists
       const [users] = await db.query('SELECT id FROM utilizadores WHERE id = ?', [userId]);
       if (users.length === 0) return res.status(404).json({ success: false, message: 'Utilizador não encontrado' });
 
       // Update provided profile keys
-      for (const [k, v] of Object.entries(profile)) {
+      for (const [k, v] of Object.entries(profileData)) {
         await Profile.addKeyValue(userId, k, String(v));
       }
 

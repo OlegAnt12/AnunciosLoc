@@ -4,8 +4,8 @@ const pushNotificationService = require('../services/pushNotificationService');
 
 const register = async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const user = await authService.registerUser(username, password);
+    const { username, password, email } = req.body;
+    const user = await authService.registerUser(username, password, email);
     const token = generateToken(user.id);
 
     // Send welcome push notification
@@ -27,6 +27,8 @@ const register = async (req, res) => {
       data: {
         id: user.id,
         username: user.username,
+        email: user.email,
+        push_token: null,
         token
       }
     });

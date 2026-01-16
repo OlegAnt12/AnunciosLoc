@@ -3,7 +3,14 @@ const cacheService = require('./cacheService');
 
 class LocationService {
   async createLocation(locationData, userId) {
-    const { nome, descricao, tipo, coordenadas } = locationData;
+    // Support both formats: tipo/tipo_coordenada, coordenadas or separate fields
+    const nome = locationData.nome;
+    const descricao = locationData.descricao;
+    const tipo = locationData.tipo || locationData.tipo_coordenada;
+    const coordenadas = locationData.coordenadas;
+    const latitude = locationData.latitude;
+    const longitude = locationData.longitude;
+    const raio_metros = locationData.raio_metros;
 
     return await db.transaction(async (connection) => {
       // Obter ID do tipo de coordenada
@@ -28,16 +35,27 @@ class LocationService {
       const localId = localResult.insertId;
 
       // Inserir coordenadas específicas
-      if (tipo === 'GPS' && coordenadas) {
-        const { latitude, longitude, raio_metros } = coordenadas;
+      if (tipo === 'GPS') {
+        let gpsData;
+        if (coordenadas && typeof coordenadas === 'object') {
+          gpsData = coordenadas;
+        } else if (latitude && longitude) {
+          gpsData = { latitude, longitude, raio_metros: raio_metros || 500 };
+        } else {
+          throw new Error('Coordenadas GPS obrigatórias');
+        }
         
         await connection.execute(
           `INSERT INTO coordenadas_gps (local_id, latitude, longitude, raio_metros) 
            VALUES (?, ?, ?, ?)`,
-          [localId, latitude, longitude, raio_metros]
+          [localId, gpsData.latitude, gpsData.longitude, gpsData.raio_metros]
         );
-      } else if (tipo === 'WIFI' && coordenadas && Array.isArray(coordenadas)) {
-        for (const ssid of coordenadas) {
+      } else if (tipo === 'WIFI') {
+        const ssids = coordenadas || [];
+        if (!Array.isArray(ssids)) {
+          throw new Error('Coordenadas WiFi devem ser um array de SSIDs');
+        }
+        for (const ssid of ssids) {
           if (ssid && ssid.trim()) {
             await connection.execute(
               'INSERT INTO ssids_wifi (local_id, ssid) VALUES (?, ?)',
@@ -206,34 +224,51 @@ class LocationService {
 
       // Se for pedido alterar o tipo, validar e atualizar
       let novoTipo = tipoAtual;
-      if (updateData.tipo && updateData.tipo !== tipoAtual) {
-        const [tipos] = await connection.execute('SELECT id FROM tipos_coordenada WHERE nome = ?', [updateData.tipo]);
+      const tipoFromData = updateData.tipo || updateData.tipo_coordenada;
+      if (tipoFromData && tipoFromData !== tipoAtual) {
+        const [tipos] = await connection.execute('SELECT id FROM tipos_coordenada WHERE nome = ?', [tipoFromData]);
         if (tipos.length === 0) throw new Error('Tipo de coordenada inválido');
         await connection.execute('UPDATE locais SET tipo_coordenada_id = ? WHERE id = ?', [tipos[0].id, locationId]);
-        novoTipo = updateData.tipo;
+        novoTipo = tipoFromData;
       }
 
-      // Coordenadas
-      if (novoTipo === 'GPS' && updateData.coordenadas) {
-        const { latitude, longitude, raio_metros } = updateData.coordenadas;
-        const [ex] = await connection.execute('SELECT local_id FROM coordenadas_gps WHERE local_id = ?', [locationId]);
-        if (ex.length > 0) {
-          await connection.execute('UPDATE coordenadas_gps SET latitude = ?, longitude = ?, raio_metros = ? WHERE local_id = ?', [latitude, longitude, raio_metros, locationId]);
-        } else {
-          await connection.execute('INSERT INTO coordenadas_gps (local_id, latitude, longitude, raio_metros) VALUES (?, ?, ?, ?)', [locationId, latitude, longitude, raio_metros]);
+      // Coordenadas - support both formats
+      const coordenadas = updateData.coordenadas;
+      const latitude = updateData.latitude;
+      const longitude = updateData.longitude;
+      const raio_metros = updateData.raio_metros;
+
+      if (novoTipo === 'GPS') {
+        let gpsData;
+        if (coordenadas && typeof coordenadas === 'object') {
+          gpsData = coordenadas;
+        } else if (latitude && longitude) {
+          gpsData = { latitude, longitude, raio_metros: raio_metros || 500 };
         }
-        // Remover quaisquer SSIDs se existirem
-        await connection.execute('DELETE FROM ssids_wifi WHERE local_id = ?', [locationId]);
-      } else if (novoTipo === 'WIFI' && updateData.coordenadas && Array.isArray(updateData.coordenadas)) {
-        // Substituir SSIDs
-        await connection.execute('DELETE FROM ssids_wifi WHERE local_id = ?', [locationId]);
-        for (const ssid of updateData.coordenadas) {
-          if (ssid && ssid.trim()) {
-            await connection.execute('INSERT INTO ssids_wifi (local_id, ssid) VALUES (?, ?)', [locationId, ssid.trim()]);
+        
+        if (gpsData) {
+          const [ex] = await connection.execute('SELECT local_id FROM coordenadas_gps WHERE local_id = ?', [locationId]);
+          if (ex.length > 0) {
+            await connection.execute('UPDATE coordenadas_gps SET latitude = ?, longitude = ?, raio_metros = ? WHERE local_id = ?', [gpsData.latitude, gpsData.longitude, gpsData.raio_metros, locationId]);
+          } else {
+            await connection.execute('INSERT INTO coordenadas_gps (local_id, latitude, longitude, raio_metros) VALUES (?, ?, ?, ?)', [locationId, gpsData.latitude, gpsData.longitude, gpsData.raio_metros]);
           }
+          // Remover quaisquer SSIDs se existirem
+          await connection.execute('DELETE FROM ssids_wifi WHERE local_id = ?', [locationId]);
         }
-        // Remover coordenadas GPS se existirem
-        await connection.execute('DELETE FROM coordenadas_gps WHERE local_id = ?', [locationId]);
+      } else if (novoTipo === 'WIFI') {
+        const ssids = coordenadas || [];
+        if (Array.isArray(ssids)) {
+          // Substituir SSIDs
+          await connection.execute('DELETE FROM ssids_wifi WHERE local_id = ?', [locationId]);
+          for (const ssid of ssids) {
+            if (ssid && ssid.trim()) {
+              await connection.execute('INSERT INTO ssids_wifi (local_id, ssid) VALUES (?, ?)', [locationId, ssid.trim()]);
+            }
+          }
+          // Remover coordenadas GPS se existirem
+          await connection.execute('DELETE FROM coordenadas_gps WHERE local_id = ?', [locationId]);
+        }
       }
 
       // Invalidar cache
