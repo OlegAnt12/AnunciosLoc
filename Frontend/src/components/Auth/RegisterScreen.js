@@ -18,7 +18,6 @@ export default function RegisterScreen({ isDarkMode, toggleTheme }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -51,10 +50,9 @@ export default function RegisterScreen({ isDarkMode, toggleTheme }) {
 
     try {
       const result = await register({ 
-        name, 
+        username: email,  // Usar email como username
         email, 
-        password, 
-        phone: phone || null 
+        password
       });
       
       if (result.success) {
@@ -184,40 +182,6 @@ export default function RegisterScreen({ isDarkMode, toggleTheme }) {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
-                editable={!loading}
-              />
-            </View>
-          </View>
-
-          {/* Phone Input */}
-          <View style={{ marginBottom: 16 }}>
-            <Text style={{ color: '#2D3436', marginBottom: 8, fontWeight: '600' }}>
-              Telemóvel (opcional)
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon 
-                name="phone-outline" 
-                size={20} 
-                color="#636E72" 
-                style={{ position: 'absolute', left: 12, zIndex: 1 }} 
-              />
-              <TextInput
-                style={{ 
-                  borderWidth: 1, 
-                  borderColor: '#DFE6E9', 
-                  borderRadius: 8, 
-                  padding: 12,
-                  paddingLeft: 40,
-                  fontSize: 16, 
-                  backgroundColor: '#FFF',
-                  flex: 1,
-                  color: '#2D3436',
-                }}
-                placeholder="Digite o seu telemóvel"
-                placeholderTextColor="#999"
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
                 editable={!loading}
               />
             </View>

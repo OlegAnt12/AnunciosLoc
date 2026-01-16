@@ -39,7 +39,7 @@ export default function ProfileScreen({ user, onLogout }) {
 
   const loadProfileData = async () => {
     try {
-      const result = await profileService.getUserProfile(user.id);
+      const result = await profileService.getUserProfile();  // Usar /profiles/me para perfil próprio
       if (result.success) {
         // Backend returns { success: true, data: { id, username, ..., profile: { key: value } } }
         const data = result.data || {};

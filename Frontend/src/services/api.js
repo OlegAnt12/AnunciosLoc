@@ -324,7 +324,7 @@ export const profileService = {
 
   async updateProfile(updates) {
     try {
-      const response = await api.put('/profiles/me', { profile: updates });
+      const response = await api.put('/profiles/me', updates);
       return response.data;
     } catch (error) {
       throw {
